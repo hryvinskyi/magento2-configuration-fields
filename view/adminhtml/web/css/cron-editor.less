@@ -1,0 +1,135 @@
+// /**
+//  * Copyright (c) 2025. Volodymyr Hryvinskyi. All rights reserved.
+//  * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
+//  * GitHub: https://github.com/hryvinskyi
+//  */
+
+
+// Cron Editor Styles for Magento Admin
+.cron-editor-root {
+    --bg-color: #ffffff;
+    --text-color: #1e1e2e;
+    --primary-color: #3b82f6;
+    --secondary-color: #22c55e;
+    --error-color: #ef4444;
+    --input-bg: #f4f4f5;
+    --hover-color: #e4e4e7;
+    --border-radius: 4px;
+    font-size: 14px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+
+    .cron-editor-container {
+        width: 100%;
+        max-width: 500px;
+    }
+
+    .mage-error {
+        margin-top: 10px!important;
+    }
+
+    .cron-editor-summary {
+        background-color: var(--input-bg);
+        padding: 10px;
+        border-radius: var(--border-radius);
+        margin-bottom: 10px;
+        font-size: 14px;
+        line-height: 1.5;
+        text-align: center;
+    }
+
+    .cron-editor-error {
+        color: var(--error-color);
+    }
+
+    .cron-editor-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .cron-editor-group {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cron-editor-field {
+        background-color: var(--input-bg);
+        border: 1px solid transparent;
+        color: var(--text-color);
+        padding: 4px 8px!important;
+        height: 30px!important;
+        border-radius: var(--border-radius)!important;
+        width: 100%;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+
+    .cron-editor-field:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+    }
+
+    .cron-editor-field:hover {
+        background-color: var(--hover-color);
+    }
+
+    .cron-editor-field.invalid {
+        border-color: var(--error-color);
+        box-shadow: 0 0 0 1px var(--error-color);
+    }
+
+    .cron-editor-highlight {
+        color: #f6a82c;
+    }
+
+    .cron-editor-label {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--text-color);
+        text-align: center;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+    .cron-editor-label.invalid {
+        color: var(--error-color);
+    }
+
+    .cron-editor-help {
+        margin-top: 14px;
+        font-size: 12px;
+        color: var(--text-color);
+        opacity: 0.85;
+        line-height: 1.5;
+    }
+
+    .cron-editor-examples {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .cron-editor-examples div {
+        background-color: var(--input-bg);
+        padding: 6px 8px;
+        border-radius: var(--border-radius);
+        font-size: 12px;
+    }
+
+    .cron-editor-examples div span {
+        color: var(--secondary-color);
+        margin-right: 5px;
+    }
+
+    .cron-editor-hidden {
+        display: none;
+    }
+}
+

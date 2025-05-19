@@ -1,0 +1,30 @@
+{
+  "name": "hryvinskyi/magento2-configuration-fields",
+  "version": "1.0.0",
+  "description": "N/A",
+  "type": "magento2-module",
+  "require": {
+    "magento/framework": "*",
+    "magento/module-store": "*",
+    "magento/module-config": "*",
+    "magento/module-backend": "*"
+  },
+  "suggest": {
+    "hryvinskyi/magento2-configuration-hints": "*"
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Volodymyr Hryvinskyi",
+      "email": "volodymyr@hryvinskyi.com"
+    }
+  ],
+  "autoload": {
+    "files": [
+      "registration.php"
+    ],
+    "psr-4": {
+      "Hryvinskyi\\ConfigurationHints\\": ""
+    }
+  }
+}

@@ -1,0 +1,33 @@
+<?php
+/**
+ * Copyright (c) 2025. Volodymyr Hryvinskyi. All rights reserved.
+ * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
+ * GitHub: https://github.com/hryvinskyi
+ */
+
+/**
+ * @var $block \Magento\Framework\View\Element\Template
+ */
+
+$element = $block->getData('element');
+$inputId = $element->getHtmlId();
+$inputName = $element->getName();
+$inputValue = $element->getEscapedValue();
+?>
+<div class="cron-editor-root" id="cron-editor-<?= $inputId ?>">
+    <div id="cron-editor-ui-<?= $inputId ?>"></div>
+
+
+    <input type="hidden" id="<?= $inputId ?>" name="<?= $inputName ?>" value="<?= $inputValue ?>" class="validate-cron-expression"/>
+</div>
+<script type="text/x-magento-init">
+    {
+        "#cron-editor-ui-<?= $inputId ?>": {
+        "Hryvinskyi_ConfigurationFields/js/cron-editor": {
+            "inputId": "<?= $inputId ?>",
+            "value": "<?= $inputValue ?>"
+        }
+    }
+}
+</script>
+
