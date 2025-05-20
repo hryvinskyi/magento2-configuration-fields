@@ -206,4 +206,3 @@ define(['jquery'], function ($) {
         updateCronExpression();
     };
 });
-

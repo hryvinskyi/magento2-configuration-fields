@@ -15,7 +15,56 @@ $inputName = $element->getName();
 $inputValue = $element->getEscapedValue();
 ?>
 <div class="cron-editor-root" id="cron-editor-<?= $inputId ?>">
-    <div id="cron-editor-ui-<?= $inputId ?>"></div>
+    <div id="cron-editor-ui-<?= $inputId ?>">
+        <div class="cron-editor-container">
+            <div class="cron-editor-summary" id="summary-<?= $inputId ?>"></div>
+            <div class="cron-editor-row">
+                <div class="cron-editor-group">
+                    <input type="text" class="cron-editor-field" id="minute-<?= $inputId ?>" value="*" maxlength="50">
+                    <label class="cron-editor-label" for="minute-<?= $inputId ?>"><?= __('minute') ?></label>
+                </div>
+                <div class="cron-editor-group">
+                    <input type="text" class="cron-editor-field" id="hour-<?= $inputId ?>" value="*" maxlength="50">
+                    <label class="cron-editor-label" for="hour-<?= $inputId ?>"><?= __('hour') ?></label>
+                </div>
+                <div class="cron-editor-group">
+                    <input type="text" class="cron-editor-field" id="day-of-month-<?= $inputId ?>" value="*" maxlength="50">
+                    <label class="cron-editor-label" for="day-of-month-<?= $inputId ?>"><?= __('day (month)') ?></label>
+                </div>
+                <div class="cron-editor-group">
+                    <input type="text" class="cron-editor-field" id="month-<?= $inputId ?>" value="*" maxlength="50">
+                    <label class="cron-editor-label" for="month-<?= $inputId ?>"><?= __('month') ?></label>
+                </div>
+                <div class="cron-editor-group">
+                    <input type="text" class="cron-editor-field" id="day-of-week-<?= $inputId ?>" value="*" maxlength="50">
+                    <label class="cron-editor-label" for="day-of-week-<?= $inputId ?>"><?= __('day (week)') ?></label>
+                </div>
+            </div>
+            <table id="cron-syntax-table-<?= $inputId ?>" class="cron-syntax-table" style="margin-top:10px;">
+                <tbody>
+                <tr><th>*</th><td><?= __('any value') ?></td></tr>
+                <tr><th>,</th><td><?= __('value list separator') ?></td></tr>
+                <tr><th>-</th><td><?= __('range of values') ?></td></tr>
+                <tr><th>/</th><td><?= __('step values') ?></td></tr>
+                </tbody>
+                <tbody id="cron-minute-tbody-<?= $inputId ?>" style="display:none">
+                <tr><th>0-59</th><td><?= __('allowed values') ?></td></tr>
+                </tbody>
+                <tbody id="cron-hour-tbody-<?= $inputId ?>" style="display:none">
+                <tr><th>0-23</th><td><?= __('allowed values') ?></td></tr>
+                </tbody>
+                <tbody id="cron-day-tbody-<?= $inputId ?>" style="display:none">
+                <tr><th>1-31</th><td><?= __('allowed values') ?></td></tr>
+                </tbody>
+                <tbody id="cron-month-tbody-<?= $inputId ?>" style="display:none">
+                <tr><th>1-12</th><td><?= __('allowed values') ?></td></tr>
+                </tbody>
+                <tbody id="cron-dow-tbody-<?= $inputId ?>" style="display:none">
+                <tr><th>0-6</th><td><?= __('allowed values') ?></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
 
     <input type="hidden" id="<?= $inputId ?>" name="<?= $inputName ?>" value="<?= $inputValue ?>" class="validate-cron-expression"/>
