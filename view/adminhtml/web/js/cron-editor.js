@@ -115,7 +115,6 @@ define(['jquery'], function ($) {
                 timeDisplay = minuteText + ' ' + hourText;
             }
 
-            // --- Improved summary logic ---
             var domPhrase = '';
             if (dayOfMonth === '*') {
                 domPhrase = '';
@@ -124,27 +123,6 @@ define(['jquery'], function ($) {
             } else {
                 domPhrase = ' on day-of-month ' + parseExpressionPart(dayOfMonth, 'day-of-month', 3).replace('month ', '').replace('months ', '');
             }
-
-            var dowPhrase = '';
-            if (dayOfWeek !== '*') {
-                var dowText = parseExpressionPart(dayOfWeek, 'day-of-week', 4);
-                dowPhrase = (domPhrase ? ' if it\'s on ' : 'on ') + dowText;
-            }
-
-            var monthPhrase = '';
-            if (month === '*') {
-                monthPhrase = '';
-            } else if (month.startsWith('*/')) {
-                monthPhrase = 'in every ' + formatOrdinal(month.slice(2)) + ' month';
-            } else {
-                monthPhrase = 'in ' + formatSimpleMonth(month);
-            }
-
-            // Compose the summary
-            var summary = 'At ' + (isSpecificTime ? timeDisplay : (minuteText + ' ' + hourText).trim());
-            if (domPhrase) summary += ' ' + domPhrase;
-            if (dowPhrase) summary += dowPhrase;
-            if (monthPhrase) summary += ' ' + monthPhrase;
 
             summaryParts = {
                 prefix: 'At ',
@@ -192,9 +170,6 @@ define(['jquery'], function ($) {
             }
 
             var html = summaryParts.prefix;
-
-            console.log(summaryParts);
-            console.log(highlightIndex);
 
             // Special handling for time part with HH:MM format
             if (summaryParts.isSpecificTime) {
@@ -347,3 +322,4 @@ define(['jquery'], function ($) {
         updateCronExpression();
     };
 });
+
