@@ -4,6 +4,7 @@ A Magento 2 module that provides enhanced UI elements for the Stores > Configura
 
 ## Features
 - **Cron Expression Editor**: Interactive, validated, and human-readable cron field for system configuration.
+- **Catalog Category Selector**: A custom field type for selecting categories in the system configuration.
 - Modern UI/UX with real-time validation and summary.
 
 ## Installation
@@ -30,15 +31,28 @@ bin/magento setup:upgrade
 - The value is stored as a standard cron expression string.
 
 ## Example system.xml Usage
-```
+
+```XML
 <field id="expression" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
     <label>Cron Expression</label>
     <frontend_model>Hryvinskyi\ConfigurationFields\Block\Adminhtml\System\Config\Form\Field\CronEditor</frontend_model>
+</field>
+
+<field id="category" translate="label" type="multiselect" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+   <label>Categories Multiselect</label>
+   <frontend_model>Hryvinskyi\ConfigurationFields\Block\Adminhtml\System\Config\Form\Field\UiSelect</frontend_model>
+</field>
+
+<field id="category" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+   <label>Categories Select</label>
+   <frontend_model>Hryvinskyi\ConfigurationFields\Block\Adminhtml\System\Config\Form\Field\UiSelect</frontend_model>
 </field>
 ```
 
 ## Screenshots
 ![Cron Editor Example](docs/images/cron-editor-example.gif)
+
+![Catalog Categories Example](docs/images/catalog-category-example.png)
 
 ## Support
 

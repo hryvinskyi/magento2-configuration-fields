@@ -265,7 +265,6 @@ define(['jquery'], function ($) {
 
             if (expr.includes(',')) {
                 var values = expr.split(',');
-                console.log(fieldPrefix);
                 return (fieldPrefix ? fieldPrefix + ' ' : '') + fieldLabel + fieldSuffix + ' '  + formatList(values, type);
             }
 
