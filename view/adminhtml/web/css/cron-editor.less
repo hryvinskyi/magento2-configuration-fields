@@ -101,14 +101,6 @@
         color: var(--error-color);
     }
 
-    .cron-editor-help {
-        margin-top: 14px;
-        font-size: 12px;
-        color: var(--text-color);
-        opacity: 0.85;
-        line-height: 1.5;
-    }
-
     .cron-editor-examples {
         display: flex;
         flex-wrap: wrap;
@@ -131,5 +123,53 @@
     .cron-editor-hidden {
         display: none;
     }
-}
 
+    .cron-syntax-table {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+        overflow: hidden;
+        margin: 20px auto;
+        font-size: 11px;
+
+        th {
+            background-color: #f0f4f8;
+            color: #2d3748;
+            font-weight: 600;
+            text-align: center;
+            padding: 3px 10px!important;
+            width: 90px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 3px 10px!important;
+            color: #4a5568;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:last-child th,
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: #f7fafc;
+        }
+    }
+    @media (max-width: 480px) {
+        .cron-syntax-table {
+            font-size: 13px;
+            max-width: 100%;
+        }
+
+        .cron-syntax-table th,
+        .cron-syntax-table td {
+            padding: 8px 10px;
+        }
+    }
+
+    tbody[id^="cron-"] {
+        transition: opacity 0.3s ease;
+    }
+}
