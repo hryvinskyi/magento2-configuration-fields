@@ -56,6 +56,9 @@ define(['jquery'], function ($) {
         $fields.forEach(function($f, i) {
             $f.val(initial[i] || '*');
         });
+        // Track validation state and current highlighted field
+        var isExpressionInvalid = false;
+        var currentHighlightIndex = null;
         function validateField(val, key) {
             if (!val) return false;
             return patterns[key].test(val);
