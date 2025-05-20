@@ -7,18 +7,20 @@
 
 /**
  * @var $block \Magento\Framework\View\Element\Template
+ * @var $element \Magento\Framework\Data\Form\Element\AbstractElement
  */
 
 $element = $block->getData('element');
 $inputId = $element->getHtmlId();
 $inputName = $element->getName();
 $inputValue = $element->getEscapedValue();
+$disabled = $element->getInherit();
 ?>
 <div class="cron-editor-root" id="cron-editor-<?= $inputId ?>">
     <div id="cron-editor-ui-<?= $inputId ?>">
         <div class="cron-editor-container">
             <div class="cron-editor-summary" id="summary-<?= $inputId ?>"></div>
-            <div class="cron-editor-row">
+            <div class="cron-editor-row  <?= $disabled ? ' cron-editor-row-disabled' : '' ?>">
                 <div class="cron-editor-group">
                     <input type="text" class="cron-editor-field" id="minute-<?= $inputId ?>" value="*" maxlength="50">
                     <label class="cron-editor-label" for="minute-<?= $inputId ?>"><?= __('minute') ?></label>

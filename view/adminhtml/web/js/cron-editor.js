@@ -59,6 +59,25 @@ define(['jquery'], function ($) {
         // Track validation state and current highlighted field
         var isExpressionInvalid = false;
         var currentHighlightIndex = null;
+
+        // Inherit checkbox logic
+        var $inheritCheckbox = $('#' + inputId + '_inherit');
+        function updateFieldsDisabledState() {
+            var isInherited = $inheritCheckbox.is(':checked');
+            // find the .cron-editor-row
+            var $row = $container.find('.cron-editor-row');
+
+            if (isInherited) {
+                $row.addClass('cron-editor-row-disabled');
+            } else {
+                $row.removeClass('cron-editor-row-disabled');
+            }
+        }
+        if ($inheritCheckbox.length) {
+            $inheritCheckbox.on('change', updateFieldsDisabledState);
+            updateFieldsDisabledState();
+        }
+
         function validateField(val, key) {
             if (!val) return false;
             return patterns[key].test(val);

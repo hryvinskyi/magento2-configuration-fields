@@ -42,8 +42,8 @@ class UiSelect extends Field
         private readonly CategoryCollectionFactory $categoryCollectionFactory,
         private readonly Session $session,
         private readonly DbHelper $dbHelper,
-        array $data = [],
-        ?SecureHtmlRenderer $secureRenderer = null
+        private readonly SecureHtmlRenderer $secureRenderer,
+        array $data = []
     ) {
         parent::__construct($context, $data, $secureRenderer);
     }
@@ -83,6 +83,50 @@ class UiSelect extends Field
         }
 
         $html .= $this->getUiComponentInitializationScript($element);
+
+        $js = <<<JS
+require(['jquery'], function($) {
+    var inheritCheckbox = $('#{$element->getId()}_inherit');
+    var uiSelectContainer = $('#{$element->getId()}');
+    function updateUiSelectDisabledState() {
+        var isInherited = inheritCheckbox.is(':checked');
+        // Disable/enable the hidden input and visually indicate
+        uiSelectContainer.find('input[type="hidden"]').prop('disabled', isInherited);
+        if (isInherited) {
+            uiSelectContainer.addClass('ui-select-inherited');
+        } else {
+            uiSelectContainer.removeClass('ui-select-inherited');
+        }
+        // Also try to disable the UI select widget if possible
+        var uiSelect = uiSelectContainer.find('.admin__control-select, .admin__control-multiselect');
+        if (uiSelect.length) {
+            uiSelect.prop('disabled', isInherited);
+        }
+    }
+    if (inheritCheckbox.length) {
+        inheritCheckbox.on('change', updateUiSelectDisabledState);
+        updateUiSelectDisabledState();
+    }
+});
+JS;
+        $css = <<<CSS
+.ui-select-inherited{
+    cursor: not-allowed;
+}
+.ui-select-inherited .action-select-wrap {
+    opacity: .5;
+    pointer-events: none;
+}
+.ui-select-inherited .action-select-wrap .action-select {
+    background-color: #e9e9e9;
+    border-color: #adadad;
+    color: #303030;
+}
+CSS;
+
+        // Add inherit checkbox JS logic
+        $html .= $this->secureRenderer->renderTag('script', [], $js, false);
+        $html .= $this->secureRenderer->renderTag('style', [], $css, false);
 
         // Add JS after element if exists
         $afterElementJs = $element->getAfterElementJs();
@@ -382,3 +426,4 @@ HTML;
         return $shownCategoriesIds;
     }
 }
+
