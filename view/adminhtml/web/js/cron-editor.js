@@ -11,44 +11,6 @@ define(['jquery'], function ($) {
         var value = config.value || '* * * * *';
         var $hiddenInput = $('#' + inputId);
         var $container = $('#cron-editor-ui-' + inputId);
-        // HTML structure from test.html, adapted for Magento admin
-        var html = `
-        <div class="cron-editor-container">
-            <div class="cron-editor-summary" id="summary-${inputId}"></div>
-            <div class="cron-editor-row">
-                <div class="cron-editor-group">
-                    <input type="text" class="cron-editor-field" id="minute-${inputId}" value="*" maxlength="50">
-                    <label class="cron-editor-label" for="minute-${inputId}">minute</label>
-                </div>
-                <div class="cron-editor-group">
-                    <input type="text" class="cron-editor-field" id="hour-${inputId}" value="*" maxlength="50">
-                    <label class="cron-editor-label" for="hour-${inputId}">hour</label>
-                </div>
-                <div class="cron-editor-group">
-                    <input type="text" class="cron-editor-field" id="day-of-month-${inputId}" value="*" maxlength="50">
-                    <label class="cron-editor-label" for="day-of-month-${inputId}">day (month)</label>
-                </div>
-                <div class="cron-editor-group">
-                    <input type="text" class="cron-editor-field" id="month-${inputId}" value="*" maxlength="50">
-                    <label class="cron-editor-label" for="month-${inputId}">month</label>
-                </div>
-                <div class="cron-editor-group">
-                    <input type="text" class="cron-editor-field" id="day-of-week-${inputId}" value="*" maxlength="50">
-                    <label class="cron-editor-label" for="day-of-week-${inputId}">day (week)</label>
-                </div>
-            </div>
-            <div class="cron-editor-help">
-                <p>Supported formats:</p>
-                <div class="cron-editor-examples">
-                    <div><span>*</span> any value</div>
-                    <div><span>5</span> specific value</div>
-                    <div><span>1-5</span> range</div>
-                    <div><span>1,3,5</span> list</div>
-                    <div><span>*/2</span> step values</div>
-                </div>
-            </div>
-        </div>`;
-        $container.html(html);
         var fieldIds = [
             'minute', 'hour', 'day-of-month', 'month', 'day-of-week'
         ];
@@ -109,48 +71,143 @@ define(['jquery'], function ($) {
                 $('#'+fieldIds[i]+'-'+inputId).siblings('label').toggleClass('invalid', !valid);
                 if (!valid) hasError = true;
             });
+
+            // Update error state
+            var wasInvalid = isExpressionInvalid;
+            isExpressionInvalid = hasError;
+
             if (hasError) {
                 $('#summary-'+inputId).html('<span class="cron-editor-error">Invalid cron expression. Please check highlighted fields.</span>');
             } else {
                 generateAndDisplaySummary(cronValues);
+                // If coming from error state, apply the current highlight
+                if (wasInvalid && currentHighlightIndex !== null) {
+                    displaySummaryWithHighlight(currentHighlightIndex);
+                }
             }
         }
+
         function generateAndDisplaySummary(cronValues) {
             var minute = cronValues[0], hour = cronValues[1], dayOfMonth = cronValues[2], month = cronValues[3], dayOfWeek = cronValues[4];
+
+            // Format time in HH:MM format for specific times
+            var timeDisplay = '';
+            var isSpecificTime = false;
+            var minuteText = '';
+            var hourText = '';
+
+            if (minute !== '*' && hour !== '*' && !minute.includes('*') && !hour.includes('*') &&
+                !minute.includes(',') && !hour.includes(',') &&
+                !minute.includes('-') && !hour.includes('-') &&
+                !minute.includes('/') && !hour.includes('/')) {
+                // For single specific time
+                var displayHour = hour.padStart(2, '0');
+                var displayMinute = minute.padStart(2, '0');
+                timeDisplay = displayHour + ':' + displayMinute;
+                isSpecificTime = true;
+            } else {
+                // For patterns, generate separate parts for minute and hour
+                minuteText = parseExpressionPart(minute, 'minute', 0);
+                hourText = parseExpressionPart(hour, 'hour', 1).replace('past ', '');
+                timeDisplay = minuteText + ' ' + hourText;
+            }
+
             summaryParts = {
                 prefix: 'At ',
-                minute: parseExpressionPart(minute, 'minute', 0),
-                hour: ' past ' + parseExpressionPart(hour, 'hour', 1),
-                dayOfMonth: dayOfMonth !== '*' ? ' on ' + parseExpressionPart(dayOfMonth, 'day-of-month', 2) : '',
-                month: month !== '*' ? ' in ' + parseExpressionPart(month, 'month', 3) : '',
+                time: timeDisplay,
+                isSpecificTime: isSpecificTime, // Flag to indicate if we have HH:MM format
+                hourValue: hour.padStart(2, '0'),
+                minuteValue: minute.padStart(2, '0'),
+                minuteText: minuteText,
+                hourText: hourText,
+                dayOfMonth: dayOfMonth !== '*' ? ' on day-of-month ' + formatSimpleValue(dayOfMonth) : '',
+                month: month !== '*' ? ' in ' + formatSimpleMonth(month) : '',
                 dayOfWeek: ''
             };
+
             if (dayOfWeek !== '*') {
                 var dayCondition = dayOfMonth === '*' ? ' on ' : ' and on ';
                 summaryParts.dayOfWeek = dayCondition + parseExpressionPart(dayOfWeek, 'day-of-week', 4);
             }
-            displaySummaryWithHighlight();
+
+            displaySummaryWithHighlight(currentHighlightIndex);
         }
+
+        function formatSimpleValue(expr) {
+            // For simple expressions without ranges or lists
+            if (!expr.includes(',') && !expr.includes('-') && !expr.includes('/')) {
+                return expr;
+            }
+            // For complex expressions, use the original parse logic
+            return expr;
+        }
+
+        function formatSimpleMonth(expr) {
+            // For single month value
+            if (!expr.includes(',') && !expr.includes('-') && !expr.includes('/')) {
+                return nameMaps.month[expr] || expr;
+            }
+            // For complex expressions
+            return parseExpressionPart(expr, 'month', 3).replace('month ', '');
+        }
+
         function displaySummaryWithHighlight(highlightIndex) {
+            // If there's an error, maintain the error message and don't modify summary
+            if (isExpressionInvalid) {
+                return;
+            }
+
             var html = summaryParts.prefix;
+
+            // Special handling for time part with HH:MM format
+            if (summaryParts.isSpecificTime) {
+                if (highlightIndex === 0) { // Minute field focused
+                    html += summaryParts.hourValue + ':' +
+                        '<span class="cron-editor-highlight">' + summaryParts.minuteValue + '</span>';
+                } else if (highlightIndex === 1) { // Hour field focused
+                    html += '<span class="cron-editor-highlight">' + summaryParts.hourValue + '</span>' +
+                        ':' + summaryParts.minuteValue;
+                } else { // No field focused or other field focused
+                    html += summaryParts.time;
+                }
+            } else {
+                // For non-specific time formats, split the time part into minute and hour for separate highlighting
+                var minutePart = summaryParts.minuteText;
+                var hourPart = summaryParts.hourText;
+                if ((minutePart || hourPart) && (highlightIndex === 0 || highlightIndex === 1)) {
+                    html += (highlightIndex === 0
+                        ? '<span class="cron-editor-highlight">' + minutePart + '</span>'
+                        : minutePart
+                    ) + ' ' +
+                    (highlightIndex === 1
+                        ? '<span class="cron-editor-highlight">' + hourPart + '</span>'
+                        : hourPart
+                    );
+                } else {
+                    html += summaryParts.time;
+                }
+            }
+
+            // Handle other parts
             var parts = [
-                {key: 'minute', index: 0},
-                {key: 'hour', index: 1},
                 {key: 'dayOfMonth', index: 2},
                 {key: 'month', index: 3},
                 {key: 'dayOfWeek', index: 4}
             ];
+
             parts.forEach(function(part) {
                 if (summaryParts[part.key]) {
                     if (highlightIndex === part.index) {
-                        html += '<span class="cron-editor-highlight">'+summaryParts[part.key]+'</span>';
+                        html += '<span class="cron-editor-highlight">' + summaryParts[part.key] + '</span>';
                     } else {
                         html += summaryParts[part.key];
                     }
                 }
             });
+
             $('#summary-'+inputId).html(html + '.');
         }
+
         function parseExpressionPart(expr, type, idx) {
             if (expr === '*') return 'every ' + fieldIds[idx].replace('-', ' ');
             if (expr.includes('*/')) {
@@ -167,28 +224,74 @@ define(['jquery'], function ($) {
             }
             return fieldIds[idx].replace('-', ' ') + ' ' + formatValue(expr, type);
         }
+
         function formatList(values, type) {
             if (values.length === 1) return formatValue(values[0], type);
             if (values.length === 2) return formatValue(values[0], type) + ' and ' + formatValue(values[1], type);
             var last = values.pop();
             return values.map(function(v) { return formatValue(v, type); }).join(', ') + ', and ' + formatValue(last, type);
         }
+
         function formatValue(val, type) {
             if (nameMaps[type] && nameMaps[type][val]) return nameMaps[type][val];
             return val;
         }
+
         function formatOrdinal(num) {
             var n = parseInt(num, 10);
             var s = ['th','st','nd','rd'], v = n%100;
             return n + (s[(v-20)%10] || s[v] || s[0]);
         }
+
+        function showCronTableSection(idx) {
+            // Hide all specific tbodies
+            $('#cron-minute-tbody-'+inputId).hide();
+            $('#cron-hour-tbody-'+inputId).hide();
+            $('#cron-day-tbody-'+inputId).hide();
+            $('#cron-month-tbody-'+inputId).hide();
+            $('#cron-dow-tbody-'+inputId).hide();
+            // Show the relevant tbody
+            if(idx === 0) $('#cron-minute-tbody-'+inputId).show();
+            else if(idx === 1) $('#cron-hour-tbody-'+inputId).show();
+            else if(idx === 2) $('#cron-day-tbody-'+inputId).show();
+            else if(idx === 3) $('#cron-month-tbody-'+inputId).show();
+            else if(idx === 4) $('#cron-dow-tbody-'+inputId).show();
+        }
+        function hideAllCronTableSections() {
+            $('#cron-minute-tbody-'+inputId).hide();
+            $('#cron-hour-tbody-'+inputId).hide();
+            $('#cron-day-tbody-'+inputId).hide();
+            $('#cron-month-tbody-'+inputId).hide();
+            $('#cron-dow-tbody-'+inputId).hide();
+        }
+
         // Event listeners
         $fields.forEach(function($f, idx) {
             $f.on('input', updateCronExpression);
-            $f.on('focus', function() { displaySummaryWithHighlight(idx); });
-            $f.on('blur', function() { displaySummaryWithHighlight(null); });
+            $f.on('focus', function() {
+                // Always highlight the field being focused, even with errors
+                // We'll store the current highlight index for use when error is resolved
+                currentHighlightIndex = idx;
+
+                // Only update display if there's no error
+                if (!isExpressionInvalid) {
+                    displaySummaryWithHighlight(idx);
+                }
+                showCronTableSection(idx);
+            });
+            $f.on('blur', function() {
+                // Clear highlight index when field is blurred
+                currentHighlightIndex = null;
+
+                // Only update display if there's no error
+                if (!isExpressionInvalid) {
+                    displaySummaryWithHighlight(null);
+                }
+                hideAllCronTableSections();
+            });
             $f.siblings('label').on('click', function() { $f.focus(); });
         });
+
         // Add custom jQuery validation rule for cron expression
         if ($.validator && $.validator.addMethod) {
             $.validator.addMethod('validate-cron-expression', function(value, element) {
@@ -202,7 +305,9 @@ define(['jquery'], function ($) {
                 return isValid;
             }, $.mage.__('Invalid cron expression. Please check highlighted fields.'));
         }
+
         // Initialize
         updateCronExpression();
     };
 });
+
