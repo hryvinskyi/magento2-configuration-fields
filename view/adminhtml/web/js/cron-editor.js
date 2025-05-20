@@ -119,9 +119,9 @@ define(['jquery'], function ($) {
             if (dayOfMonth === '*') {
                 domPhrase = '';
             } else if (dayOfMonth.startsWith('*/')) {
-                domPhrase = ' ' + parseExpressionPart(dayOfMonth, 'day-of-month', 3);
+                domPhrase = ' on ' + parseExpressionPart(dayOfMonth, 'day-of-month', 2);
             } else {
-                domPhrase = ' on day-of-month ' + parseExpressionPart(dayOfMonth, 'day-of-month', 3).replace('month ', '').replace('months ', '');
+                domPhrase = ' on day-of-month ' + parseExpressionPart(dayOfMonth, 'day-of-month', 2).replace('month ', '').replace('months ', '');
             }
 
             summaryParts = {
@@ -138,8 +138,11 @@ define(['jquery'], function ($) {
             };
 
             if (dayOfWeek !== '*') {
-                var dayCondition = dayOfMonth === '*' ? ' on ' : ' and on ';
-                summaryParts.dayOfWeek = dayCondition + parseExpressionPart(dayOfWeek, 'day-of-week', 4);
+                if (dayOfMonth !== '*') {
+                    summaryParts.dayOfWeek = " if it's on " + parseExpressionPart(dayOfWeek, 'day-of-week', 4);
+                } else {
+                    summaryParts.dayOfWeek = ' on ' + parseExpressionPart(dayOfWeek, 'day-of-week', 4);
+                }
             }
 
             displaySummaryWithHighlight(currentHighlightIndex);
@@ -202,12 +205,26 @@ define(['jquery'], function ($) {
 
             // Handle other parts
             var parts = [
-                {key: 'dayOfMonth', index: 2},
-                {key: 'month', index: 3},
-                {key: 'dayOfWeek', index: 4}
+                {
+                    key: 'dayOfMonth',
+                    index: 2,
+                    sortOrder: 2
+                },
+                {
+                    key: 'month',
+                    index: 3,
+                    sortOrder: 4
+                },
+                {
+                    key: 'dayOfWeek',
+                    index: 4,
+                    sortOrder: 3
+                }
             ];
 
-            parts.forEach(function(part) {
+            parts
+                .sort((a, b) => {return a.sortOrder - b.sortOrder})
+                .forEach(function(part) {
                 if (summaryParts[part.key]) {
                     if (highlightIndex === part.index) {
                         html += '<span class="cron-editor-highlight">' + summaryParts[part.key] + '</span>';
@@ -221,18 +238,18 @@ define(['jquery'], function ($) {
         }
 
         function parseExpressionPart(expr, type, idx) {
-            if (expr === '*') return 'every ' + fieldIds[idx].replace('-', ' ');
+            var fieldLabel = fieldIds[idx].replace('-', ' ');
+            if (expr === '*') return 'every ' + fieldLabel;
             if (expr.includes('*/')) {
                 var step = expr.split('/')[1];
-                return 'every ' + formatOrdinal(step) + ' ' + fieldIds[idx].replace('-', ' ');
+                return 'every ' + formatOrdinal(step) + ' ' + fieldLabel;
             }
             if (expr.includes(',')) {
                 var values = expr.split(',');
-                return fieldIds[idx].replace('-', ' ') + 's ' + formatList(values, type);
+                return fieldLabel + 's ' + formatList(values, type);
             }
             if (expr.includes('-')) {
                 var parts = expr.split('-');
-                return fieldIds[idx].replace('-', ' ') + 's ' + formatValue(parts[0], type) + ' through ' + formatValue(parts[1], type);
             }
             return fieldIds[idx].replace('-', ' ') + ' ' + formatValue(expr, type);
         }
