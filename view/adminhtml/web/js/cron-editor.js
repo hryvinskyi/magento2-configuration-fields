@@ -111,17 +111,15 @@ define(['jquery'], function ($) {
             } else {
                 // For patterns, generate separate parts for minute and hour
                 minuteText = parseExpressionPart(minute, 'minute', 0);
-                hourText = parseExpressionPart(hour, 'hour', 1).replace('past ', '');
+                hourText = parseExpressionPart(hour, 'hour', 1);
                 timeDisplay = minuteText + ' ' + hourText;
             }
 
             var domPhrase = '';
             if (dayOfMonth === '*') {
                 domPhrase = '';
-            } else if (dayOfMonth.startsWith('*/')) {
-                domPhrase = ' on ' + parseExpressionPart(dayOfMonth, 'day-of-month', 2);
             } else {
-                domPhrase = ' on day-of-month ' + parseExpressionPart(dayOfMonth, 'day-of-month', 2).replace('month ', '').replace('months ', '');
+                domPhrase = ' ' + parseExpressionPart(dayOfMonth, 'day-of-month', 2);
             }
 
             summaryParts = {
@@ -139,9 +137,9 @@ define(['jquery'], function ($) {
 
             if (dayOfWeek !== '*') {
                 if (dayOfMonth !== '*') {
-                    summaryParts.dayOfWeek = " if it's on " + parseExpressionPart(dayOfWeek, 'day-of-week', 4);
+                    summaryParts.dayOfWeek = " if it's " + parseExpressionPart(dayOfWeek, 'day-of-week', 4);
                 } else {
-                    summaryParts.dayOfWeek = ' on ' + parseExpressionPart(dayOfWeek, 'day-of-week', 4);
+                    summaryParts.dayOfWeek = ' ' + parseExpressionPart(dayOfWeek, 'day-of-week', 4);
                 }
             }
 
@@ -239,19 +237,47 @@ define(['jquery'], function ($) {
 
         function parseExpressionPart(expr, type, idx) {
             var fieldLabel = fieldIds[idx].replace('-', ' ');
+            var fieldPrefix = '';
+            var fieldSuffix = 's';
+
+            if (type === 'hour') {
+                fieldPrefix = 'past';
+                fieldSuffix = '';
+            }
+            if (type === 'day-of-week') {
+                fieldPrefix = 'on';
+                fieldSuffix = '';
+            }
+            if (type === 'day-of-month') {
+                fieldLabel = fieldIds[idx];
+                fieldPrefix = 'on';
+                fieldSuffix = '';
+            }
+
+            if (expr === '*' && type === 'hour') return '';
             if (expr === '*') return 'every ' + fieldLabel;
+            if (expr === '*') return 'every ' + fieldLabel;
+
             if (expr.includes('*/')) {
                 var step = expr.split('/')[1];
-                return 'every ' + formatOrdinal(step) + ' ' + fieldLabel;
+                return (fieldPrefix ? fieldPrefix + ' ' : '') + 'every ' + formatOrdinal(step) + ' ' + fieldLabel;
             }
+
             if (expr.includes(',')) {
                 var values = expr.split(',');
-                return fieldLabel + 's ' + formatList(values, type);
+                console.log(fieldPrefix);
+                return (fieldPrefix ? fieldPrefix + ' ' : '') + fieldLabel + fieldSuffix + ' '  + formatList(values, type);
             }
+
             if (expr.includes('-')) {
                 var parts = expr.split('-');
+                // ex from n through n1.
+                if (parts[0] !== undefined && parts[1] !== undefined) {
+                    return (fieldPrefix ? fieldPrefix + ' ' : '') + 'every ' + fieldLabel + ' from ' + formatValue(parts[0], type) + ' through ' + formatValue(parts[1], type);
+                }
             }
-            return fieldIds[idx].replace('-', ' ') + ' ' + formatValue(expr, type);
+
+            return (fieldPrefix ? fieldPrefix + ' ' : '') + fieldLabel + ' ' + formatValue(expr, type);
         }
 
         function formatList(values, type) {
@@ -262,7 +288,9 @@ define(['jquery'], function ($) {
         }
 
         function formatValue(val, type) {
-            if (nameMaps[type] && nameMaps[type][val]) return nameMaps[type][val];
+            if (nameMaps[type] && nameMaps[type][val]) {
+                return nameMaps[type][val];
+            }
             return val;
         }
 
