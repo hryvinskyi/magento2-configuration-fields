@@ -72,10 +72,11 @@ class UiSelect extends Field
         } else {
             // Main UI component HTML
             $html .= sprintf(
-                '<div id="%s" data-bind="scope: \'ui_select_categories\'">
+                '<div id="%s" data-bind="scope: \'_%s\'">
                 <input type="hidden" name="%s" value="%s" data-bind="value: value" />
                 <!-- ko template: elementTmpl --><!-- /ko -->
             </div>',
+                $element->getId(),
                 $element->getId(),
                 $element->getName(),
                 $value
@@ -190,7 +191,7 @@ CSS;
     "#{$element->getId()}": {
         "Magento_Ui/js/core/app": {
             "components": {
-                "ui_select_categories": {
+                "_{$element->getId()}": {
                     "formElement": "select",
                     "componentType": "field",
                     "component": "Magento_Ui/js/form/element/ui-select",
