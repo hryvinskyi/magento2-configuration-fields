@@ -13,32 +13,52 @@ define([
     /**
      * Mode to required addons/modes mapping
      */
+    var foldBase = [
+        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/foldcode',
+        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/foldgutter',
+        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/comment-fold'
+    ];
+
+    var braceFold = foldBase.concat([
+        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/brace-fold'
+    ]);
+
+    var xmlFold = foldBase.concat([
+        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/xml-fold'
+    ]);
+
+    var allFold = foldBase.concat([
+        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/brace-fold',
+        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/xml-fold',
+        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/indent-fold'
+    ]);
+
     var modeRequirements = {
         'css': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/css/css',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ],
+        ].concat(braceFold),
         'text/x-less': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/css/css',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ],
+        ].concat(braceFold),
         'text/x-scss': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/css/css',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ],
+        ].concat(braceFold),
         'javascript': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/javascript/javascript',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ],
+        ].concat(braceFold),
         'application/json': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/javascript/javascript',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ],
+        ].concat(braceFold),
         'htmlmixed': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/xml/xml',
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/javascript/javascript',
@@ -47,12 +67,12 @@ define([
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closetag',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ],
+        ].concat(allFold),
         'xml': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/xml/xml',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closetag',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ],
+        ].concat(xmlFold),
         'php': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/xml/xml',
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/javascript/javascript',
@@ -63,21 +83,25 @@ define([
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closetag',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ],
+        ].concat(allFold),
         'sql': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/sql/sql',
             'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ],
+        ].concat(braceFold),
         'yaml': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/yaml/yaml'
-        ],
+        ].concat(foldBase.concat([
+            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/indent-fold'
+        ])),
         'markdown': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/xml/xml',
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/markdown/markdown'
         ],
         'shell': [
             'Hryvinskyi_ConfigurationFields/js/codemirror/mode/shell/shell'
-        ]
+        ].concat(foldBase.concat([
+            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/indent-fold'
+        ]))
     };
 
     /**
@@ -122,6 +146,9 @@ define([
             loadCss('Hryvinskyi_ConfigurationFields/js/codemirror/theme/' + theme + '.css');
         }
 
+        // Load fold gutter CSS
+        loadCss('Hryvinskyi_ConfigurationFields/css/foldgutter.css');
+
         // Load required mode modules then initialize editor
         require(getRequiredModules(mode), function () {
             editor = CodeMirror.fromTextArea($textarea[0], {
@@ -133,6 +160,8 @@ define([
                 autoCloseBrackets: true,
                 autoCloseTags: true,
                 matchBrackets: true,
+                foldGutter: true,
+                gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
                 indentUnit: 4,
                 tabSize: 4,
                 indentWithTabs: false,
