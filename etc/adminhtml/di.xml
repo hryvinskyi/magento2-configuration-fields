@@ -9,9 +9,50 @@
 
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- The category select reads the catalog through the cached source: one entry per store view and admin role,
+         under this module's own cache id. The admin's role comes from the role locator the admin area binds. -->
+    <preference for="Hryvinskyi\ConfigurationFields\Api\CategoryOptionSourceInterface"
+                type="Hryvinskyi\ConfigurationFields\Model\Category\CachedCategoryOptionSource"/>
+    <type name="Hryvinskyi\ConfigurationFields\Model\Category\CachedCategoryOptionSource">
+        <arguments>
+            <argument name="source" xsi:type="object">Hryvinskyi\ConfigurationFields\Model\Category\CategoryOptionSource</argument>
+            <argument name="serializer" xsi:type="object">Magento\Framework\Serialize\Serializer\Json</argument>
+        </arguments>
+    </type>
+
+    <!-- The field blocks reach their view model and the label wrapper through their data argument. Magento merges a
+         type's arguments into its subclasses and virtual types, so every language editor and every consumer's
+         tag-list virtual type gets them too. -->
     <type name="Hryvinskyi\ConfigurationFields\Block\Adminhtml\System\Config\Form\Field\UiSelect">
         <arguments>
-            <argument name="session" xsi:type="object">Magento\Backend\Model\Auth\Session\Proxy</argument>
+            <argument name="data" xsi:type="array">
+                <item name="ui_select_view_model" xsi:type="object">Hryvinskyi\ConfigurationFields\ViewModel\UiSelectField</item>
+                <item name="field_addon_labels" xsi:type="object">Hryvinskyi\ConfigurationFields\Model\Field\AddonLabelWrapper</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Hryvinskyi\ConfigurationFields\Block\Adminhtml\System\Config\Form\Field\TagList">
+        <arguments>
+            <argument name="data" xsi:type="array">
+                <item name="tag_list_view_model" xsi:type="object">Hryvinskyi\ConfigurationFields\ViewModel\TagListField</item>
+                <item name="field_addon_labels" xsi:type="object">Hryvinskyi\ConfigurationFields\Model\Field\AddonLabelWrapper</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Hryvinskyi\ConfigurationFields\Block\Adminhtml\System\Config\Form\Field\CronEditor">
+        <arguments>
+            <argument name="data" xsi:type="array">
+                <item name="cron_editor_view_model" xsi:type="object">Hryvinskyi\ConfigurationFields\ViewModel\CronEditorField</item>
+                <item name="field_addon_labels" xsi:type="object">Hryvinskyi\ConfigurationFields\Model\Field\AddonLabelWrapper</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Hryvinskyi\ConfigurationFields\Block\Adminhtml\System\Config\Form\Field\CodeMirror\Editor">
+        <arguments>
+            <argument name="data" xsi:type="array">
+                <item name="code_mirror_view_model" xsi:type="object">Hryvinskyi\ConfigurationFields\ViewModel\CodeMirrorField</item>
+                <item name="field_addon_labels" xsi:type="object">Hryvinskyi\ConfigurationFields\Model\Field\AddonLabelWrapper</item>
+            </argument>
         </arguments>
     </type>
 </config>

@@ -1,0 +1,62 @@
+<?php
+/**
+ * Copyright (c) 2026. Volodymyr Hryvinskyi. All rights reserved.
+ * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
+ * GitHub: https://github.com/hryvinskyi
+ */
+
+declare(strict_types=1);
+
+use Hryvinskyi\ConfigurationFields\ViewModel\UiSelectField;
+use Magento\Framework\Data\Form\Element\AbstractElement;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/**
+ * A category select field: the place where Magento's searchable select component renders, and the hidden input that
+ * posts the picked category id, or the ids joined by commas
+ *
+ * The select is Magento's own markup, so the root carries the kit's `hui-tokens` class: the select keeps the admin
+ * theme's controls and behaviour, and the module's stylesheet reads the kit's tokens for the read-only state. The
+ * script creates the component under the name the `scope` binding asks for, and finds the hidden input by its
+ * `data-role`; until it runs, the hidden input posts the stored value. An element type the select cannot draw is
+ * shown as a kit notice naming it, with no input.
+ *
+ * @var Template $block
+ * @var Escaper $escaper
+ */
+$element = $block->getData('element');
+$viewModel = $block->getData('view_model');
+if (!$element instanceof AbstractElement || !$viewModel instanceof UiSelectField) {
+    return;
+}
+$notice = $viewModel->unsupportedNotice($element);
+?>
+<?php if ($notice !== null): ?>
+    <div class="hui hcf-ui-select" data-role="hcf-ui-select">
+        <div class="hui-notice" data-tone="error" data-role="hcf-ui-select-unsupported" role="alert">
+            <div class="hui-notice__text"><?= $escaper->escapeHtml($notice) ?></div>
+        </div>
+    </div>
+    <?php return; ?>
+<?php endif; ?>
+<?php
+$config = $viewModel->config($element);
+$disabled = $config['disabled'];
+$scopeBinding = "scope: '" . $escaper->escapeJs($config['componentName']) . "'";
+?>
+<div class="hui-tokens hcf-ui-select"
+     id="<?= $escaper->escapeHtmlAttr($config['mount']['rootId']) ?>"
+     data-role="hcf-ui-select"<?= $disabled ? ' data-disabled="true"' : '' ?>>
+    <div class="hcf-ui-select__control"
+         data-role="hcf-ui-select-control"
+         data-bind="<?= $escaper->escapeHtmlAttr($scopeBinding) ?>">
+        <!-- ko template: elementTmpl --><!-- /ko -->
+    </div>
+    <input type="hidden"
+           id="<?= $escaper->escapeHtmlAttr($config['inputId']) ?>"
+           name="<?= $escaper->escapeHtmlAttr($config['inputName']) ?>"
+           value="<?= $escaper->escapeHtmlAttr($config['value']) ?>"
+           data-role="hcf-ui-select-value"<?= $disabled ? ' disabled' : '' ?>>
+</div>
+<script type="text/x-magento-init"><?= /* @noEscape */ $config['mount']['initJson'] ?></script>

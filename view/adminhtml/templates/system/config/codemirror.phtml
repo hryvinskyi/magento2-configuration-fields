@@ -5,42 +5,38 @@
  * GitHub: https://github.com/hryvinskyi
  */
 
+declare(strict_types=1);
+
+use Hryvinskyi\ConfigurationFields\ViewModel\CodeMirrorField;
+use Magento\Framework\Data\Form\Element\AbstractElement;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
 /**
- * @var $block \Magento\Framework\View\Element\Template
- * @var $element \Magento\Framework\Data\Form\Element\AbstractElement
- * @var $escaper \Magento\Framework\Escaper
+ * A code field: Magento's textarea, which CodeMirror replaces once its script has mounted on the root
+ *
+ * The root carries the kit's `hui` class and the root class of earlier versions. The textarea's text goes through the
+ * attribute escaper, which also encodes an ampersand that is already part of an entity: a stored `&lt;` reaches the
+ * editor as `&lt;`, not as `<`, and is saved back unchanged.
+ *
+ * @var Template $block
+ * @var Escaper $escaper
  */
-
 $element = $block->getData('element');
+$viewModel = $block->getData('view_model');
 $editorConfig = $block->getData('editor_config');
-$inputId = $element->getHtmlId();
-$inputName = $element->getName();
-$inputValue = $element->getEscapedValue();
-$disabled = $element->getCanUseWebsiteValue()
-    || $element->getCanUseDefaultValue()
-    || $element->getCanRestoreToDefault();
-
-$configJson = json_encode([
-    'inputId' => $inputId,
-    'mode' => $editorConfig['mode'] ?? 'htmlmixed',
-    'theme' => $editorConfig['theme'] ?? 'default',
-    'lineNumbers' => $editorConfig['lineNumbers'] ?? true,
-    'lineWrapping' => $editorConfig['lineWrapping'] ?? true,
-    'readOnly' => $disabled,
-], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+if (!$element instanceof AbstractElement || !$viewModel instanceof CodeMirrorField || !is_array($editorConfig)) {
+    return;
+}
+$config = $viewModel->config($element, $editorConfig);
+$disabled = $config['disabled'];
 ?>
-<div class="codemirror-editor-root" id="codemirror-editor-<?= $escaper->escapeHtmlAttr($inputId) ?>">
-    <textarea
-        id="<?= $escaper->escapeHtmlAttr($inputId) ?>"
-        name="<?= $escaper->escapeHtmlAttr($inputName) ?>"
-        class="admin__control-textarea codemirror-textarea"
-        <?= $disabled ? 'disabled="disabled"' : '' ?>
-    ><?= $escaper->escapeHtml($inputValue) ?></textarea>
+<div class="hui hcf-code codemirror-editor-root"
+     id="<?= $escaper->escapeHtmlAttr($config['mount']['rootId']) ?>"
+     data-role="hcf-code"<?= $disabled ? ' data-disabled="true"' : '' ?>>
+    <textarea id="<?= $escaper->escapeHtmlAttr($config['inputId']) ?>"
+              name="<?= $escaper->escapeHtmlAttr($config['inputName']) ?>"
+              class="admin__control-textarea codemirror-textarea"<?= $disabled ? ' disabled' : '' ?>
+    ><?= $escaper->escapeHtmlAttr($config['value']) ?></textarea>
 </div>
-<script type="text/x-magento-init">
-    {
-        "#codemirror-editor-<?= $escaper->escapeJs($inputId) ?>": {
-            "Hryvinskyi_ConfigurationFields/js/codemirror-editor": <?= /* @noEscape */ $configJson ?>
-        }
-    }
-</script>
+<script type="text/x-magento-init"><?= /* @noEscape */ $config['mount']['initJson'] ?></script>

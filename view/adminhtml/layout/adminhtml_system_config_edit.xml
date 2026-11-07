@@ -6,13 +6,20 @@
  * GitHub: https://github.com/hryvinskyi
  */
 -->
-
+<!--
+    The configuration page loads the admin UI kit for the module's fields. Magento merges a file's update handles
+    before the file's own content, so the kit's stylesheet is linked before the module's, and a module rule overrides
+    a kit rule of the same weight by order. The update stays in this file, beside the module's stylesheets: declared
+    elsewhere, the order is not guaranteed. The kit reaches only the fields' own markup, which carries its root class.
+    The code editor's stylesheet comes with the handle every page that holds a code editor asks for.
+-->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="hryvinskyi_admin_ui"/>
+    <update handle="hryvinskyi_configuration_fields_code_editor"/>
     <head>
         <css src="Hryvinskyi_ConfigurationFields::css/cron-editor.css"/>
         <css src="Hryvinskyi_ConfigurationFields::css/tag-list.css"/>
-        <css src="Hryvinskyi_ConfigurationFields::css/codemirror-editor.css"/>
+        <css src="Hryvinskyi_ConfigurationFields::css/ui-select.css"/>
     </head>
 </page>
-

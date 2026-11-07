@@ -1,0 +1,150 @@
+/**
+ * Copyright (c) 2025-2026. Volodymyr Hryvinskyi. All rights reserved.
+ * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
+ * GitHub: https://github.com/hryvinskyi
+ */
+
+/*
+ * The cron field on the admin UI kit: the summary of the expression, five part inputs in one row with their labels
+ * under them, and the syntax table, whose rows for a part show while that part's input has focus.
+ *
+ * Every colour, radius and the typeface come from the kit's `--hui-*` tokens, declared on the `hui` root the widget's
+ * markup carries. The part inputs are kit inputs (`hui-input`): the kit draws their focus ring, their disabled state
+ * and the error border of `aria-invalid='true'`.
+ *
+ * States come from the markup: `data-disabled='true'` on the root while the value is inherited or locked;
+ * `aria-invalid='true'` on a part the browser code rejects; the `hidden` attribute on the per-part rows of the syntax
+ * table, which the kit honours inside its root. The form validator prints each refusal as a `.mage-error` label under
+ * the field: the cron rule's own label is empty, because the summary above the parts already shows its wording in
+ * the error tone, and an empty label is hidden; a label from any other rule of the field (`required-entry`) carries
+ * its text and shows.
+ */
+
+.hcf-cron {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+    font-size: 14px;
+}
+
+.hcf-cron__summary {
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: center;
+    background: var(--hui-well);
+    border: 1px solid var(--hui-line);
+    border-radius: var(--hui-radius-box);
+    color: var(--hui-ink);
+}
+
+.hcf-cron__summary:empty {
+    display: none;
+}
+
+/* The script marks the summary with the error tone while it holds the error wording. */
+.hcf-cron__summary[data-tone='error'] {
+    background: var(--hui-error-bg);
+    border-color: var(--hui-error-line);
+    color: var(--hui-error-ink);
+}
+
+.hcf-cron__parts {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.hcf-cron__part {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.hcf-cron .hcf-cron__input {
+    width: 100%;
+    font-family: var(--hui-mono);
+    text-align: center;
+}
+
+.hcf-cron__label {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+    color: var(--hui-muted);
+    cursor: pointer;
+}
+
+.hcf-cron__input[aria-invalid='true'] + .hcf-cron__label {
+    color: var(--hui-error-ink);
+}
+
+/* A rejected part: the configuration page's own input rules outweigh the kit's single-class error border. */
+.hui.hcf-cron .hcf-cron__input[aria-invalid='true'] {
+    border-color: var(--hui-error);
+    box-shadow: 0 0 0 1px var(--hui-error);
+    color: var(--hui-error-ink);
+}
+
+/* The cron rule leaves its label empty, since the summary above the parts says why; the admin theme would still draw
+   the empty label as a bordered box. A label with text, from another rule of the field, shows. The validator shows
+   its labels with jQuery's `show()`, which writes an inline `display` on a label a stylesheet hides, so only an
+   important declaration keeps the empty one hidden. */
+.hui.hcf-cron .mage-error:empty {
+    display: none !important;
+}
+
+/* The configuration page pads every cell of its tables (`.accordion .form-inline .config td`, three classes and an
+   element); the syntax table sets its own at the same weight, and wins by coming later. */
+.hcf-cron .hcf-cron__syntax {
+    width: 100%;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    border-collapse: collapse;
+    background: var(--hui-surface);
+    border: 1px solid var(--hui-line);
+    color: var(--hui-ink-soft);
+}
+
+.hui.hcf-cron .hcf-cron__syntax th,
+.hui.hcf-cron .hcf-cron__syntax td {
+    padding: 3px 10px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--hui-line-faint);
+}
+
+.hcf-cron .hcf-cron__syntax th {
+    width: 90px;
+    font-family: var(--hui-mono);
+    font-weight: 600;
+    text-align: center;
+    background: var(--hui-subtle);
+    color: var(--hui-ink);
+}
+
+.hcf-cron .hcf-cron__syntax td {
+    text-align: left;
+}
+
+/* The rows of the focused part: its allowed values, set off in the accent. */
+.hcf-cron .hcf-cron__syntax tbody[data-part] th,
+.hcf-cron .hcf-cron__syntax tbody[data-part] td {
+    background: var(--hui-accent-bg);
+    color: var(--hui-accent-ink);
+}
+
+/* Inherited or locked: the kit draws the disabled inputs; the summary and the labels follow in the disabled ink. */
+.hcf-cron[data-disabled='true'] .hcf-cron__summary {
+    background: var(--hui-field-disabled);
+    color: var(--hui-disabled-ink);
+}
+
+.hcf-cron[data-disabled='true'] .hcf-cron__label {
+    color: var(--hui-disabled-ink);
+    cursor: default;
+}

@@ -1,0 +1,29 @@
+/**
+ * Copyright (c) 2026. Volodymyr Hryvinskyi. All rights reserved.
+ * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
+ * GitHub: https://github.com/hryvinskyi
+ */
+
+/*
+ * The category select's read-only state. The select itself is Magento's component, drawn in the admin theme; the
+ * widget's root carries the kit's `hui-tokens` class, so these rules read the kit's colour tokens without the kit's
+ * base rules reaching the component's buttons.
+ *
+ * `data-disabled='true'` on the root while the value is inherited or locked: the component takes no pointer input and
+ * reads as off. The script disables the component and the hidden input as well, so nothing is posted.
+ */
+
+.hcf-ui-select[data-disabled='true'] {
+    cursor: not-allowed;
+}
+
+.hcf-ui-select[data-disabled='true'] .action-select-wrap {
+    opacity: .5;
+    pointer-events: none;
+}
+
+.hcf-ui-select[data-disabled='true'] .action-select-wrap .action-select {
+    background-color: var(--hui-select-disabled);
+    border-color: var(--hui-line-strong);
+    color: var(--hui-ink);
+}

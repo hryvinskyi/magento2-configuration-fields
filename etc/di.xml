@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright (c) 2026. Volodymyr Hryvinskyi. All rights reserved.
+ * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
+ * GitHub: https://github.com/hryvinskyi
+ */
+-->
+
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Global: tag-list values are written by the backend model wherever configuration is saved, the command line
+         included, and read by the field in the admin -->
+    <preference for="Hryvinskyi\ConfigurationFields\Api\TagListCodecPoolInterface"
+                type="Hryvinskyi\ConfigurationFields\Model\TagList\CodecPool"/>
+
+    <!-- A tag-list field's save reads the pattern, case rule and message from the field's frontend model, the block
+         that shows them in the browser, so each pattern has one owner -->
+    <preference for="Hryvinskyi\ConfigurationFields\Model\TagList\FieldSettingsSourceInterface"
+                type="Hryvinskyi\ConfigurationFields\Model\TagList\FrontendModelSettingsSource"/>
+
+    <!-- Fields are declared in the admin area's system.xml files, so they are looked up in the structure read for the
+         admin scope in every area, as Magento's own configuration import does -->
+    <type name="Hryvinskyi\ConfigurationFields\Model\TagList\FrontendModelSettingsSource">
+        <arguments>
+            <argument name="structure" xsi:type="object">adminhtmlConfigStructure</argument>
+        </arguments>
+    </type>
+
+    <!-- A field block's settings are its declared tagListConfig as the admin area declares it, read in every area
+         the same way and never applied to the running container -->
+    <preference for="Hryvinskyi\ConfigurationFields\Model\TagList\FieldBlockConfigInterface"
+                type="Hryvinskyi\ConfigurationFields\Model\TagList\FieldBlock\DeclaredFieldBlockConfig"/>
+
+    <!-- The loader that reads the di.xml files, in every application mode: a compiled application's own loader
+         returns the compiled configuration, in a shape of its own -->
+    <type name="Hryvinskyi\ConfigurationFields\Model\TagList\FieldBlock\DeclaredFieldBlockConfig">
+        <arguments>
+            <argument name="declarations" xsi:type="object">Magento\Framework\App\ObjectManager\ConfigLoader</argument>
+        </arguments>
+    </type>
+
+    <!-- Storage formats by save type; another module adds one by adding an item -->
+    <type name="Hryvinskyi\ConfigurationFields\Model\TagList\CodecPool">
+        <arguments>
+            <argument name="codecs" xsi:type="array">
+                <item name="json" xsi:type="object">Hryvinskyi\ConfigurationFields\Model\TagList\Codec\JsonCodec</item>
+                <item name="serialized" xsi:type="object">Hryvinskyi\ConfigurationFields\Model\TagList\Codec\SerializedCodec</item>
+                <item name="separator" xsi:type="object">Hryvinskyi\ConfigurationFields\Model\TagList\Codec\SeparatorCodec</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Hryvinskyi\ConfigurationFields\Model\TagList\Codec\JsonCodec">
+        <arguments>
+            <argument name="json" xsi:type="object">Magento\Framework\Serialize\Serializer\Json</argument>
+        </arguments>
+    </type>
+
+    <!-- Widget settings are printed into a script block, so the serializer must escape < and >. Wired in every area,
+         so the escaping holds wherever the class is built -->
+    <type name="Hryvinskyi\ConfigurationFields\Model\Field\WidgetMount">
+        <arguments>
+            <argument name="json" xsi:type="object">Magento\Framework\Serialize\Serializer\JsonHexTag</argument>
+        </arguments>
+    </type>
+
+    <!-- PHP's serializer with classes disallowed: a stored object is never instantiated -->
+    <type name="Hryvinskyi\ConfigurationFields\Model\TagList\Codec\SerializedCodec">
+        <arguments>
+            <argument name="serializer" xsi:type="object">Magento\Framework\Serialize\Serializer\Serialize</argument>
+        </arguments>
+    </type>
+</config>

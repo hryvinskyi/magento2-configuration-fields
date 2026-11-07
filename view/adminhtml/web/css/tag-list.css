@@ -1,0 +1,166 @@
+/**
+ * Copyright (c) 2025-2026. Volodymyr Hryvinskyi. All rights reserved.
+ * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
+ * GitHub: https://github.com/hryvinskyi
+ */
+
+/*
+ * The tag-list field on the admin UI kit: a box drawn like a kit input that holds the chips and the text input that
+ * adds one, the search input shown once the chips outgrow their area, and the error line under the box.
+ *
+ * Every colour, radius and the focus ring come from the kit's `--hui-*` tokens, declared on the `hui` root the
+ * widget's markup carries. The text inputs and the error line are kit components (`hui-input`, `hui-field__error`);
+ * these rules only fit the text input into the box and draw the chips.
+ *
+ * States come from the markup: `data-disabled='true'` on the root while the value is inherited or locked, which draws
+ * the box like a disabled kit control; `aria-invalid='true'` on the text input while its entry is rejected; the
+ * `hidden` attribute, which the kit honours inside its root.
+ */
+
+.hcf-tag-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    font-size: 14px;
+}
+
+.hcf-tag-list__search {
+    width: 100%;
+}
+
+.hcf-tag-list__box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    min-height: 34px;
+    padding: 4px 6px;
+    background: var(--hui-surface);
+    border: 1px solid var(--hui-line-strong);
+    border-radius: var(--hui-radius-control);
+    cursor: text;
+}
+
+.hcf-tag-list__box:focus-within {
+    border-color: var(--hui-focus);
+    box-shadow: 0 0 3px 1px var(--hui-focus-glow);
+}
+
+.hcf-tag-list__chips {
+    display: flex;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.hcf-tag-list__chips:empty {
+    display: none;
+}
+
+/* While the search input is shown, the chips scroll inside their area instead of growing the page. */
+.hcf-tag-list__search:not([hidden]) ~ .hcf-tag-list__box .hcf-tag-list__chips {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/*
+ * The text input sits inside the box, which draws the border and the focus ring; the configuration page sets every
+ * text input to the full width, so the input's size comes from its flex basis and its minimum width.
+ */
+.hcf-tag-list .hcf-tag-list__input {
+    flex: 1 1 120px;
+    min-width: 120px;
+    height: 24px;
+    padding: 0 4px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.hcf-tag-list .hcf-tag-list__input:focus {
+    box-shadow: none;
+}
+
+.hcf-tag-list__input::placeholder {
+    color: var(--hui-faint);
+}
+
+/* A rejected entry: the text takes the error colour, and the box the error border where the browser can tell. */
+.hcf-tag-list .hcf-tag-list__input[aria-invalid='true'] {
+    color: var(--hui-error-ink);
+}
+
+@supports selector(:has(*)) {
+    .hcf-tag-list__box:has(.hcf-tag-list__input[aria-invalid='true']) {
+        border-color: var(--hui-error);
+    }
+}
+
+.hcf-tag-list__chip {
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+    max-width: 100%;
+    padding: 1px 2px 1px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 20px;
+    background: var(--hui-own-bg);
+    border: 1px solid var(--hui-own-line);
+    border-radius: var(--hui-radius-box);
+    color: var(--hui-own-ink);
+}
+
+.hcf-tag-list__text {
+    min-width: 0;
+    word-break: break-all;
+}
+
+/* The remove button is a bare glyph: the admin theme's button background, border and padding stay off it. */
+.hcf-tag-list .hcf-tag-list__remove {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    padding: 0;
+    font-family: var(--hui-font);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1;
+    background: transparent;
+    border: 0;
+    border-radius: var(--hui-radius-control);
+    color: inherit;
+    cursor: pointer;
+}
+
+.hcf-tag-list .hcf-tag-list__remove:is(:hover, :focus, :active) {
+    background: var(--hui-own-line);
+    color: inherit;
+}
+
+.hcf-tag-list .hcf-tag-list__remove:disabled {
+    background: transparent;
+    cursor: default;
+}
+
+/* Inherited or locked: the box is drawn like a disabled kit control and its chips in neutral grey. */
+.hcf-tag-list[data-disabled='true'] .hcf-tag-list__box {
+    background: var(--hui-field-disabled);
+    border-color: var(--hui-line-strong);
+    box-shadow: none;
+    cursor: default;
+}
+
+.hcf-tag-list[data-disabled='true'] .hcf-tag-list__chip {
+    background: var(--hui-canvas);
+    border-color: var(--hui-line);
+    color: var(--hui-disabled-ink);
+}

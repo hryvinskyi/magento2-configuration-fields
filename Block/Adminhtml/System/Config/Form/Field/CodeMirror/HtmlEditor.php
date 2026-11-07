@@ -19,8 +19,8 @@ class HtmlEditor extends Editor
 {
     /**
      * @param Context $context
-     * @param array<string, mixed> $editorConfig
-     * @param array<string, mixed> $data
+     * @param array<string,mixed> $editorConfig
+     * @param array<string,mixed> $data
      */
     public function __construct(
         Context $context,

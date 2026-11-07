@@ -5,179 +5,85 @@
  */
 
 define([
+    'require',
     'jquery',
-    'Hryvinskyi_ConfigurationFields/js/codemirror/lib/codemirror'
-], function ($, CodeMirror) {
+    'Hryvinskyi_ConfigurationFields/js/codemirror/lib/codemirror',
+    'Hryvinskyi_ConfigurationFields/js/codemirror-setup',
+    'Hryvinskyi_ConfigurationFields/js/stylesheet-link'
+], function (require, $, CodeMirror, setup, stylesheetLink) {
     'use strict';
 
-    /**
-     * Mode to required addons/modes mapping
-     */
-    var foldBase = [
-        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/foldcode',
-        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/foldgutter',
-        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/comment-fold'
-    ];
-
-    var braceFold = foldBase.concat([
-        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/brace-fold'
-    ]);
-
-    var xmlFold = foldBase.concat([
-        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/xml-fold'
-    ]);
-
-    var allFold = foldBase.concat([
-        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/brace-fold',
-        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/xml-fold',
-        'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/indent-fold'
-    ]);
-
-    var modeRequirements = {
-        'css': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/css/css',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ].concat(braceFold),
-        'text/x-less': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/css/css',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ].concat(braceFold),
-        'text/x-scss': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/css/css',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ].concat(braceFold),
-        'javascript': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/javascript/javascript',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ].concat(braceFold),
-        'application/json': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/javascript/javascript',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ].concat(braceFold),
-        'htmlmixed': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/xml/xml',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/javascript/javascript',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/css/css',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/htmlmixed/htmlmixed',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closetag',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ].concat(allFold),
-        'xml': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/xml/xml',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closetag',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ].concat(xmlFold),
-        'php': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/xml/xml',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/javascript/javascript',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/css/css',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/htmlmixed/htmlmixed',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/clike/clike',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/php/php',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closetag',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/closebrackets',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ].concat(allFold),
-        'sql': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/sql/sql',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/edit/matchbrackets'
-        ].concat(braceFold),
-        'yaml': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/yaml/yaml'
-        ].concat(foldBase.concat([
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/indent-fold'
-        ])),
-        'markdown': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/xml/xml',
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/markdown/markdown'
-        ],
-        'shell': [
-            'Hryvinskyi_ConfigurationFields/js/codemirror/mode/shell/shell'
-        ].concat(foldBase.concat([
-            'Hryvinskyi_ConfigurationFields/js/codemirror/addon/fold/indent-fold'
-        ]))
-    };
+    var mounted = new WeakSet();
 
     /**
-     * Load CSS file dynamically
+     * The x-magento-init entry: CodeMirror over the root's textarea, once per root
      *
-     * @param {String} url
-     */
-    function loadCss(url) {
-        var link = document.createElement('link');
-
-        link.type = 'text/css';
-        link.rel = 'stylesheet';
-        link.href = require.toUrl(url);
-        document.getElementsByTagName('head')[0].appendChild(link);
-    }
-
-    /**
-     * Get required modules for a mode
+     * The root `[data-role="hcf-code"]` carries `data-disabled="true"` while the value is inherited ("Use system
+     * value" checked) or locked, and the editor is read-only for as long. The editor follows the checkbox (`inheritId`)
+     * through its native `change` event; the page's own handler on the checkbox enables the textarea. Once the editor
+     * exists it is published as `$(textarea).data('codemirror')` and announced by the textarea's
+     * `codemirror:initialized` event, which carries it.
      *
-     * @param {String} mode
-     * @return {Array}
+     * @param {Object} config `{inputId, inheritId, mode, theme, lineNumbers, lineWrapping, readOnly}`
+     * @param {HTMLElement} element The root
      */
-    function getRequiredModules(mode) {
-        return modeRequirements[mode] || modeRequirements['htmlmixed'];
-    }
-
     return function (config, element) {
-        var $element = $(element),
-            $textarea = $element.find('textarea'),
-            inputId = config.inputId,
+        var document = element.ownerDocument,
+            textarea = element.querySelector('textarea'),
+            $textarea = $(textarea),
             mode = config.mode || 'htmlmixed',
             theme = config.theme || 'default',
             lineNumbers = config.lineNumbers !== false,
             lineWrapping = config.lineWrapping !== false,
-            readOnly = config.readOnly || false,
-            editor;
+            inherit = typeof config.inheritId === 'string' && config.inheritId !== ''
+                ? document.getElementById(config.inheritId)
+                : null,
+            disabled = config.readOnly === true || element.getAttribute('data-disabled') === 'true',
+            locked = disabled && !(inherit && inherit.checked);
 
-        // Load required CSS
-        loadCss('Hryvinskyi_ConfigurationFields/js/codemirror/lib/codemirror.css');
+        if (!textarea || mounted.has(element)) {
+            return;
+        }
+        mounted.add(element);
 
-        if (theme && theme !== 'default') {
-            loadCss('Hryvinskyi_ConfigurationFields/js/codemirror/theme/' + theme + '.css');
+        /**
+         * @returns {Boolean}
+         */
+        function isReadOnly() {
+            return locked || Boolean(inherit && inherit.checked);
         }
 
-        // Load fold gutter CSS
-        loadCss('Hryvinskyi_ConfigurationFields/css/foldgutter.css');
+        /**
+         * Mirror the read-only state onto the root and, once it exists, the editor
+         *
+         * @param {?Object} editor
+         */
+        function applyState(editor) {
+            var readOnly = isReadOnly();
+
+            if (readOnly) {
+                element.setAttribute('data-disabled', 'true');
+            } else {
+                element.removeAttribute('data-disabled');
+            }
+            if (editor) {
+                editor.setOption('readOnly', setup.readOnlyOption(readOnly));
+            }
+        }
+
+        setup.stylesheetsFor(theme).forEach(function (id) {
+            stylesheetLink.addOnce(document, require.toUrl(id));
+        });
 
         // Load required mode modules then initialize editor
-        require(getRequiredModules(mode), function () {
-            editor = CodeMirror.fromTextArea($textarea[0], {
+        require(setup.modulesFor(mode), function () {
+            var editor = CodeMirror.fromTextArea(textarea, setup.options({
                 mode: mode,
                 theme: theme,
                 lineNumbers: lineNumbers,
                 lineWrapping: lineWrapping,
-                readOnly: readOnly ? 'nocursor' : false,
-                autoCloseBrackets: true,
-                autoCloseTags: true,
-                matchBrackets: true,
-                foldGutter: true,
-                gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-                indentUnit: 4,
-                tabSize: 4,
-                indentWithTabs: false,
-                extraKeys: {
-                    'Tab': function (cm) {
-                        if (cm.somethingSelected()) {
-                            cm.indentSelection('add');
-                        } else {
-                            cm.replaceSelection('    ', 'end');
-                        }
-                    },
-                    'Shift-Tab': function (cm) {
-                        cm.indentSelection('subtract');
-                    }
-                }
-            });
+                readOnly: isReadOnly()
+            }));
 
             // Set height based on content or default
             editor.setSize(null, Math.max(200, $textarea.height() || 200));
@@ -187,22 +93,11 @@ define([
                 $textarea.val(cm.getValue());
             });
 
-            // Handle inherit checkbox state
-            var $inheritCheckbox = $('#' + inputId + '_inherit');
-
-            if ($inheritCheckbox.length) {
-                $inheritCheckbox.on('change', function () {
-                    var isInherited = $(this).is(':checked');
-
-                    editor.setOption('readOnly', isInherited ? 'nocursor' : false);
-                    $element.toggleClass('codemirror-disabled', isInherited);
+            applyState(editor);
+            if (inherit) {
+                inherit.addEventListener('change', function () {
+                    applyState(editor);
                 });
-
-                // Set initial state
-                if ($inheritCheckbox.is(':checked')) {
-                    editor.setOption('readOnly', 'nocursor');
-                    $element.addClass('codemirror-disabled');
-                }
             }
 
             // Store editor instance for external access

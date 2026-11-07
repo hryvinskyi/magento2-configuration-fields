@@ -12,4 +12,3 @@ ComponentRegistrar::register(
     'Hryvinskyi_ConfigurationFields',
     __DIR__
 );
-

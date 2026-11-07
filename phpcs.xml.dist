@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright (c) 2025-2026. Volodymyr Hryvinskyi. All rights reserved.
+ * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
+ * GitHub: https://github.com/hryvinskyi
+ */
+-->
+<ruleset name="Hryvinskyi_ConfigurationFields">
+    <description>Magento 2 coding standard for this module; vendored CodeMirror sources are not checked.</description>
+    <arg name="extensions" value="php,phtml,xml,css,js"/>
+    <file>.</file>
+    <exclude-pattern>*/view/adminhtml/web/js/codemirror/*</exclude-pattern>
+    <exclude-pattern>*/view/adminhtml/web/css/foldgutter.css</exclude-pattern>
+    <exclude-pattern>*/view/adminhtml/web/js/cronstrue.js</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/docs/*</exclude-pattern>
+    <rule ref="Magento2"/>
+</ruleset>

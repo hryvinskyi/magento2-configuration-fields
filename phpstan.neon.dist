@@ -1,0 +1,19 @@
+parameters:
+    level: 10
+    paths:
+        - Api
+        - Model
+        - ViewModel
+        - Block/Adminhtml/System/Config/Form/Field/AbstractWidgetField.php
+        - Block/Adminhtml/System/Config/Form/Field/TagList.php
+        - Block/Adminhtml/System/Config/Form/Field/CronEditor.php
+        - Block/Adminhtml/System/Config/Form/Field/UiSelect.php
+        - Block/Adminhtml/System/Config/Form/Field/CodeMirror
+        - Test
+    excludePaths:
+        - vendor (?)
+    bootstrapFiles:
+        - ../../../../vendor/autoload.php
+    scanDirectories:
+        - ../../../../generated/code
+        - ../../../../dev/tests/integration/framework

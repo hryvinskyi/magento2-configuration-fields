@@ -1,86 +1,81 @@
 <?php
 /**
- * Copyright (c) 2025. Volodymyr Hryvinskyi. All rights reserved.
+ * Copyright (c) 2025-2026. Volodymyr Hryvinskyi. All rights reserved.
  * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
  * GitHub: https://github.com/hryvinskyi
  */
 
+declare(strict_types=1);
+
+use Hryvinskyi\ConfigurationFields\ViewModel\CronEditorField;
+use Magento\Framework\Data\Form\Element\AbstractElement;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
 /**
- * @var $block \Magento\Framework\View\Element\Template
- * @var $element \Magento\Framework\Data\Form\Element\AbstractElement
+ * A cron field on the admin UI kit: the summary of the expression, one input per part with its label, the syntax
+ * table whose rows for a part show while that part's input has focus, and the hidden input that posts the expression
+ *
+ * The root carries the kit's `hui` class, so the kit reaches only this widget, and the root class of earlier versions
+ * for themes and scripts that hook it. The hidden input carries the class of the form-validation rule the script
+ * registers and the classes Magento gives the field (its `<validate>` rules among them), and holds the stored
+ * expression. The script finds every part by its `data-role`.
+ *
+ * @var Template $block
+ * @var Escaper $escaper
  */
-
 $element = $block->getData('element');
-$inputId = $element->getHtmlId();
-$inputName = $element->getName();
-$inputValue = $element->getEscapedValue();
-$disabled = $element->getCanUseWebsiteValue()
-        || $element->getCanUseDefaultValue()
-        || $element->getCanRestoreToDefault();
-?>
-<div class="cron-editor-root" id="cron-editor-<?= $inputId ?>">
-    <div id="cron-editor-ui-<?= $inputId ?>">
-        <div class="cron-editor-container">
-            <div class="cron-editor-summary" id="summary-<?= $inputId ?>"></div>
-            <div class="cron-editor-row  <?= $disabled ? ' cron-editor-row-disabled' : '' ?>">
-                <div class="cron-editor-group">
-                    <input type="text" class="cron-editor-field" id="minute-<?= $inputId ?>" value="*" maxlength="50">
-                    <label class="cron-editor-label" for="minute-<?= $inputId ?>"><?= __('minute') ?></label>
-                </div>
-                <div class="cron-editor-group">
-                    <input type="text" class="cron-editor-field" id="hour-<?= $inputId ?>" value="*" maxlength="50">
-                    <label class="cron-editor-label" for="hour-<?= $inputId ?>"><?= __('hour') ?></label>
-                </div>
-                <div class="cron-editor-group">
-                    <input type="text" class="cron-editor-field" id="day-of-month-<?= $inputId ?>" value="*" maxlength="50">
-                    <label class="cron-editor-label" for="day-of-month-<?= $inputId ?>"><?= __('day (month)') ?></label>
-                </div>
-                <div class="cron-editor-group">
-                    <input type="text" class="cron-editor-field" id="month-<?= $inputId ?>" value="*" maxlength="50">
-                    <label class="cron-editor-label" for="month-<?= $inputId ?>"><?= __('month') ?></label>
-                </div>
-                <div class="cron-editor-group">
-                    <input type="text" class="cron-editor-field" id="day-of-week-<?= $inputId ?>" value="*" maxlength="50">
-                    <label class="cron-editor-label" for="day-of-week-<?= $inputId ?>"><?= __('day (week)') ?></label>
-                </div>
-            </div>
-            <table id="cron-syntax-table-<?= $inputId ?>" class="cron-syntax-table" style="margin-top:10px;">
-                <tbody>
-                <tr><th>*</th><td><?= __('any value') ?></td></tr>
-                <tr><th>,</th><td><?= __('value list separator') ?></td></tr>
-                <tr><th>-</th><td><?= __('range of values') ?></td></tr>
-                <tr><th>/</th><td><?= __('step values') ?></td></tr>
-                </tbody>
-                <tbody id="cron-minute-tbody-<?= $inputId ?>" style="display:none">
-                <tr><th>0-59</th><td><?= __('allowed values') ?></td></tr>
-                </tbody>
-                <tbody id="cron-hour-tbody-<?= $inputId ?>" style="display:none">
-                <tr><th>0-23</th><td><?= __('allowed values') ?></td></tr>
-                </tbody>
-                <tbody id="cron-day-tbody-<?= $inputId ?>" style="display:none">
-                <tr><th>1-31</th><td><?= __('allowed values') ?></td></tr>
-                </tbody>
-                <tbody id="cron-month-tbody-<?= $inputId ?>" style="display:none">
-                <tr><th>1-12</th><td><?= __('allowed values') ?></td></tr>
-                </tbody>
-                <tbody id="cron-dow-tbody-<?= $inputId ?>" style="display:none">
-                <tr><th>0-6</th><td><?= __('allowed values') ?></td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-
-    <input type="hidden" id="<?= $inputId ?>" name="<?= $inputName ?>" value="<?= $inputValue ?>" class="validate-cron-expression"/>
-</div>
-<script type="text/x-magento-init">
-    {
-        "#cron-editor-ui-<?= $inputId ?>": {
-        "Hryvinskyi_ConfigurationFields/js/cron-editor": {
-            "inputId": "<?= $inputId ?>",
-            "value": "<?= $inputValue ?>"
-        }
-    }
+$viewModel = $block->getData('view_model');
+if (!$element instanceof AbstractElement || !$viewModel instanceof CronEditorField) {
+    return;
 }
-</script>
-
+$config = $viewModel->config($element);
+$disabled = $config['disabled'];
+?>
+<div class="hui hcf-cron cron-editor-root"
+     id="<?= $escaper->escapeHtmlAttr($config['mount']['rootId']) ?>"
+     data-role="hcf-cron"<?= $disabled ? ' data-disabled="true"' : '' ?>>
+    <div class="hcf-cron__summary" data-role="hcf-cron-summary" role="status"></div>
+    <div class="hcf-cron__parts">
+        <?php foreach ($config['parts'] as $part): ?>
+            <div class="hcf-cron__part">
+                <input type="text"
+                       class="hui-input hcf-cron__input"
+                       id="<?= $escaper->escapeHtmlAttr($part['inputId']) ?>"
+                       data-role="hcf-cron-field"
+                       data-part="<?= $escaper->escapeHtmlAttr($part['part']) ?>"
+                       maxlength="50"
+                       autocomplete="off"
+                       spellcheck="false"<?= $disabled ? ' disabled' : '' ?>>
+                <label class="hcf-cron__label" for="<?= $escaper->escapeHtmlAttr($part['inputId']) ?>">
+                    <?= $escaper->escapeHtml($part['label']) ?>
+                </label>
+            </div>
+        <?php endforeach; ?>
+    </div>
+    <table class="hcf-cron__syntax" data-role="hcf-cron-syntax">
+        <tbody>
+        <?php foreach ($config['syntax'] as $row): ?>
+            <tr>
+                <th scope="row"><?= $escaper->escapeHtml($row['symbol']) ?></th>
+                <td><?= $escaper->escapeHtml($row['meaning']) ?></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+        <?php foreach ($config['parts'] as $part): ?>
+            <tbody data-part="<?= $escaper->escapeHtmlAttr($part['part']) ?>" hidden>
+            <tr>
+                <th scope="row"><?= $escaper->escapeHtml($part['allowed']) ?></th>
+                <td><?= $escaper->escapeHtml($config['allowedValuesLabel']) ?></td>
+            </tr>
+            </tbody>
+        <?php endforeach; ?>
+    </table>
+    <input type="hidden"
+           id="<?= $escaper->escapeHtmlAttr($config['inputId']) ?>"
+           name="<?= $escaper->escapeHtmlAttr($config['inputName']) ?>"
+           value="<?= $escaper->escapeHtmlAttr($config['value']) ?>"
+           class="<?= $escaper->escapeHtmlAttr($config['valueClass']) ?>"
+           data-role="hcf-cron-value"<?= $disabled ? ' disabled' : '' ?>>
+</div>
+<script type="text/x-magento-init"><?= /* @noEscape */ $config['mount']['initJson'] ?></script>

@@ -1,0 +1,136 @@
+/**
+ * Copyright (c) 2025-2026. Volodymyr Hryvinskyi. All rights reserved.
+ * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
+ * GitHub: https://github.com/hryvinskyi
+ */
+
+/*
+ * The code field on the admin UI kit: the frame of the CodeMirror editor that replaces the field's textarea.
+ *
+ * The frame (border, radius, focus ring, typeface) comes from the kit's `--hui-*` tokens and applies to every editor
+ * theme. The colours inside the editor (background, gutter, selection, active line, brackets, cursor) are set for
+ * CodeMirror's default theme only, so a dark theme the field names keeps its own palette. Every rule reaches only the
+ * editors inside the module's `hcf-code` root: the configuration field's, which is a kit root (`hui`), and the UI form
+ * element's, which carries the kit's tokens alone (`hui-tokens`) because the form around it is Magento's markup. The
+ * page of a UI form links this file through the layout handle `hryvinskyi_configuration_fields_code_editor`, which
+ * links the kit's stylesheet first.
+ *
+ * `data-disabled='true'` on the root, while the value is inherited or locked, draws the editor like a disabled kit
+ * control.
+ *
+ * The token colours at the end override only the ones where the field's look differs from CodeMirror's default theme.
+ */
+
+.hcf-code {
+    position: relative;
+    width: 100%;
+}
+
+/* Until the editor replaces it, the textarea already takes the editor's typeface and height. */
+.hcf-code .codemirror-textarea {
+    width: 100%;
+    min-height: 200px;
+    font-family: var(--hui-mono);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.hcf-code .CodeMirror {
+    min-height: 200px;
+    font-family: var(--hui-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid var(--hui-line-strong);
+    border-radius: var(--hui-radius-control);
+}
+
+.hcf-code .CodeMirror-scroll {
+    min-height: 200px;
+}
+
+.hcf-code .CodeMirror-focused {
+    border-color: var(--hui-focus);
+    box-shadow: 0 0 3px 1px var(--hui-focus-glow);
+}
+
+.hcf-code .cm-s-default.CodeMirror {
+    background: var(--hui-surface);
+    color: var(--hui-ink);
+}
+
+.hcf-code .cm-s-default .CodeMirror-gutters {
+    background: var(--hui-subtle);
+    border-right: 1px solid var(--hui-line);
+}
+
+.hcf-code .cm-s-default .CodeMirror-linenumber {
+    padding: 0 8px;
+    color: var(--hui-faint);
+}
+
+.hcf-code .cm-s-default .CodeMirror-cursor {
+    border-left-color: var(--hui-ink);
+}
+
+.hcf-code .cm-s-default .CodeMirror-selected {
+    background: var(--hui-neutral);
+}
+
+.hcf-code .cm-s-default.CodeMirror-focused .CodeMirror-selected {
+    background: var(--hui-own-line);
+}
+
+.hcf-code .cm-s-default .CodeMirror-activeline-background {
+    background: var(--hui-accent-bg);
+}
+
+.hcf-code .cm-s-default.CodeMirror span.CodeMirror-matchingbracket {
+    font-weight: 700;
+    background: var(--hui-ok-bg);
+    color: var(--hui-ok-ink);
+}
+
+.hcf-code .cm-s-default.CodeMirror span.CodeMirror-nonmatchingbracket {
+    font-weight: 700;
+    background: var(--hui-error-bg);
+    color: var(--hui-error-ink);
+}
+
+/* Inherited or locked: a read-only editor without a cursor, drawn like a disabled kit control. */
+.hcf-code[data-disabled='true'] .CodeMirror {
+    border-color: var(--hui-line-strong);
+    box-shadow: none;
+}
+
+.hcf-code[data-disabled='true'] .CodeMirror-cursors {
+    visibility: hidden;
+}
+
+.hcf-code[data-disabled='true'] .cm-s-default.CodeMirror,
+.hcf-code[data-disabled='true'] .cm-s-default .CodeMirror-gutters {
+    background: var(--hui-field-disabled);
+    color: var(--hui-disabled-ink);
+}
+
+/* Syntax colours that differ from CodeMirror's default theme: plain identifiers in the body ink, markup and links in
+   the kit's link and success colours, errors in the error ink. CodeMirror's own stylesheet supplies every other
+   token colour. */
+.hcf-code .cm-s-default .cm-variable,
+.hcf-code .cm-s-default .cm-property,
+.hcf-code .cm-s-default .cm-operator {
+    color: var(--hui-ink);
+}
+
+.hcf-code .cm-s-default .cm-tag {
+    color: var(--hui-ok-ink);
+}
+
+.hcf-code .cm-s-default .cm-attribute,
+.hcf-code .cm-s-default .cm-header,
+.hcf-code .cm-s-default .cm-link {
+    color: var(--hui-link);
+}
+
+.hcf-code .cm-s-default .cm-error {
+    color: var(--hui-error-ink);
+}

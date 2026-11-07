@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2025. Volodymyr Hryvinskyi. All rights reserved.
+ * Copyright (c) 2025-2026. Volodymyr Hryvinskyi. All rights reserved.
  * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
  * GitHub: https://github.com/hryvinskyi
  */
@@ -9,422 +9,37 @@ declare(strict_types=1);
 
 namespace Hryvinskyi\ConfigurationFields\Block\Adminhtml\System\Config\Form\Field;
 
-use Magento\Backend\Block\Template\Context;
-use Magento\Backend\Model\Auth\Session;
-use Magento\Catalog\Model\Category as CategoryModel;
-use Magento\Catalog\Model\Locator\LocatorInterface;
-use Magento\Catalog\Model\ResourceModel\Category\Collection;
-use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
-use Magento\Config\Block\System\Config\Form\Field;
-use Magento\Framework\App\Cache\Type\Block;
-use Magento\Framework\App\CacheInterface;
+use Hryvinskyi\ConfigurationFields\ViewModel\UiSelectField;
 use Magento\Framework\Data\Form\Element\AbstractElement;
-use Magento\Framework\DB\Helper as DbHelper;
 use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Serialize\SerializerInterface;
-use Magento\Framework\View\Helper\SecureHtmlRenderer;
 
 /**
- * UI Select field for system configuration
+ * Category select configuration field
+ *
+ * Draws a `select` or `multiselect` field as Magento's searchable category tree. The field stores one category id, or
+ * several joined by commas. Any other field type is drawn as a notice naming it.
+ *
+ * The view model and the label wrapper arrive as items of the block's `data` argument, declared for this type in the
+ * module's adminhtml `di.xml`; Magento merges a type's arguments into its subclasses and virtual types, so a subclass
+ * that declares its own constructor must forward `$data` to this one.
  */
-class UiSelect extends Field
+class UiSelect extends AbstractWidgetField
 {
-    /**
-     * Category tree cache identifier
-     */
-    private const CATEGORY_TREE_ID = 'CATALOG_PRODUCT_CATEGORY_TREE';
-
-    public function __construct(
-        Context $context,
-        private readonly LocatorInterface $locator,
-        private readonly SerializerInterface $serializer,
-        private readonly CacheInterface $cacheManager,
-        private readonly CategoryCollectionFactory $categoryCollectionFactory,
-        private readonly Session $session,
-        private readonly DbHelper $dbHelper,
-        private readonly SecureHtmlRenderer $secureRenderer,
-        array $data = []
-    ) {
-        parent::__construct($context, $data, $secureRenderer);
-    }
+    public const VIEW_MODEL = 'ui_select_view_model';
 
     /**
-     * @inheritdoc
-     */
-    protected function _getElementHtml(AbstractElement $element): string
-    {
-        $html = '';
-        $htmlId = $element->getHtmlId();
-        $value = $this->prepareElementValue($element);
-
-        // Add before element HTML if exists
-        $beforeElementHtml = $element->getBeforeElementHtml();
-        if ($beforeElementHtml) {
-            $html .= sprintf(
-                '<label class="addbefore" for="%s">%s</label>',
-                $htmlId,
-                $beforeElementHtml
-            );
-        }
-
-        if ($element->getType() !== 'select' && $element->getType() !== 'multiselect') {
-            $html .= '<div>Field type ' . $element->getType() . ' is not supported. Please use "select" or "multiselect".</div>';
-        } else {
-            // Main UI component HTML
-            $html .= sprintf(
-                '<div id="%s" data-bind="scope: \'_%s\'">
-                <input type="hidden" name="%s" value="%s" data-bind="value: value" />
-                <!-- ko template: elementTmpl --><!-- /ko -->
-            </div>',
-                $element->getId(),
-                $element->getId(),
-                $element->getName(),
-                $value
-            );
-        }
-
-        $html .= $this->getUiComponentInitializationScript($element);
-
-        $js = <<<JS
-require(['jquery'], function($) {
-    var inheritCheckbox = $('#{$element->getId()}_inherit');
-    var uiSelectContainer = $('#{$element->getId()}');
-    function updateUiSelectDisabledState() {
-        var isInherited = inheritCheckbox.is(':checked');
-        // Disable/enable the hidden input and visually indicate
-        uiSelectContainer.find('input[type="hidden"]').prop('disabled', isInherited);
-        if (isInherited) {
-            uiSelectContainer.addClass('ui-select-inherited');
-        } else {
-            uiSelectContainer.removeClass('ui-select-inherited');
-        }
-        // Also try to disable the UI select widget if possible
-        var uiSelect = uiSelectContainer.find('.admin__control-select, .admin__control-multiselect');
-        if (uiSelect.length) {
-            uiSelect.prop('disabled', isInherited);
-        }
-    }
-    if (inheritCheckbox.length) {
-        inheritCheckbox.on('change', updateUiSelectDisabledState);
-        updateUiSelectDisabledState();
-    }
-});
-JS;
-        $css = <<<CSS
-.ui-select-inherited{
-    cursor: not-allowed;
-}
-.ui-select-inherited .action-select-wrap {
-    opacity: .5;
-    pointer-events: none;
-}
-.ui-select-inherited .action-select-wrap .action-select {
-    background-color: #e9e9e9;
-    border-color: #adadad;
-    color: #303030;
-}
-CSS;
-
-        // Add inherit checkbox JS logic
-        $html .= $this->secureRenderer->renderTag('script', [], $js, false);
-        $html .= $this->secureRenderer->renderTag('style', [], $css, false);
-
-        // Add JS after element if exists
-        $afterElementJs = $element->getAfterElementJs();
-        if ($afterElementJs) {
-            $html .= $afterElementJs;
-        }
-
-        // Add after element HTML if exists
-        $afterElementHtml = $element->getAfterElementHtml();
-        if ($afterElementHtml) {
-            $html .= sprintf(
-                '<label class="addafter" for="%s">%s</label>',
-                $htmlId,
-                $afterElementHtml
-            );
-        }
-
-        return $html;
-    }
-
-    /**
-     * Format element value for display
+     * The category-select widget
      *
      * @param AbstractElement $element
      * @return string
+     * @throws LocalizedException When the block has no layout
+     * @throws \LogicException When the view model is not configured
      */
-    private function prepareElementValue(AbstractElement $element): string
+    protected function widgetHtml(AbstractElement $element): string
     {
-        $value = $element->getEscapedValue();
-
-        if (is_array($value)) {
-            $value = implode(',', $value);
-        }
-
-        return (string)$value;
-    }
-
-    /**
-     * Generate UI component initialization script
-     *
-     * @param AbstractElement $element
-     * @return string
-     */
-    public function getUiComponentInitializationScript(AbstractElement $element): string
-    {
-        $options = $this->getCategoriesTree();
-        $configJson = json_encode($options);
-        $value = $this->getElementValueForJs($element);
-
-        // Check if $element is multiselect
-        $config = $element->getFieldConfig();
-        if (!isset($config['type'])) {
-            $config['type'] = 'select';
-        }
-        $isMultiSelect = $config['type'] === 'multiselect';
-        $multiple = $isMultiSelect ? 'true' : 'false';
-
-        return <<<HTML
-<script type="text/x-magento-init">
-{
-    "#{$element->getId()}": {
-        "Magento_Ui/js/core/app": {
-            "components": {
-                "_{$element->getId()}": {
-                    "formElement": "select",
-                    "componentType": "field",
-                    "component": "Magento_Ui/js/form/element/ui-select",
-                    "elementTmpl": "ui/grid/filters/elements/ui-select",
-                    "filterOptions": true,
-                    "chipsEnabled": true,
-                    "disableLabel": true,
-                    "levelsVisibility": "1",
-                    "options": $configJson,
-                    "value": $value,
-                    "multiple": $multiple
-                }
-            }
-        }
+        return $this->renderWidget('Hryvinskyi_ConfigurationFields::system/config/ui_select.phtml', [
+            'element' => $element,
+            'view_model' => $this->requiredData(self::VIEW_MODEL, UiSelectField::class),
+        ]);
     }
 }
-</script>
-HTML;
-    }
-
-    /**
-     * Get element value in format suitable for JS component
-     *
-     * @param AbstractElement $element
-     * @return string
-     */
-    private function getElementValueForJs(AbstractElement $element): string
-    {
-        $value = $element->getEscapedValue();
-
-        if ((is_array($value) === false && $value === null) || $value === '') {
-            $value = [];
-        } elseif (is_string($value)) {
-            $value = explode(',', $value);
-        }
-
-        return json_encode($value);
-    }
-
-    /**
-     * Retrieve categories tree
-     *
-     * @param string|null $filter
-     * @return array
-     * @throws LocalizedException
-     */
-    protected function getCategoriesTree(?string $filter = null): array
-    {
-        $storeId = $this->getStoreId();
-        $cacheId = $this->getCategoriesTreeCacheId($storeId, (string)$filter);
-
-        // Try to load from cache first
-        $cachedCategoriesTree = $this->cacheManager->load($cacheId);
-        if (!empty($cachedCategoriesTree)) {
-            return $this->serializer->unserialize($cachedCategoriesTree);
-        }
-
-        // Build categories tree
-        $shownCategoriesIds = $this->retrieveShownCategoriesIds($storeId, (string)$filter);
-        $categoriesTree = $this->buildCategoriesTree($storeId, $shownCategoriesIds);
-
-        // Save to cache
-        $this->cacheManager->save(
-            $this->serializer->serialize($categoriesTree),
-            $cacheId,
-            [
-                CategoryModel::CACHE_TAG,
-                Block::CACHE_TAG
-            ]
-        );
-
-        return $categoriesTree;
-    }
-
-    /**
-     * Get current store ID
-     *
-     * @return int
-     */
-    private function getStoreId(): int
-    {
-        try {
-            return (int)$this->locator->getStore()->getId();
-        } catch (\Exception $e) {
-            return 0;
-        }
-    }
-
-    /**
-     * Get cache ID for categories tree
-     *
-     * @param int $storeId
-     * @param string $filter
-     * @return string
-     */
-    private function getCategoriesTreeCacheId(int $storeId, string $filter = ''): string
-    {
-        $cacheId = self::CATEGORY_TREE_ID . '_' . (string)$storeId;
-
-        if ($this->session->getUser() !== null) {
-            $cacheId .= '_' . $this->session->getUser()->getAclRole();
-        }
-
-        if (!empty($filter)) {
-            $cacheId .= '_' . $filter;
-        }
-
-        return $cacheId;
-    }
-
-    /**
-     * Build tree of categories with attributes
-     *
-     * @param int $storeId
-     * @param array $shownCategoriesIds
-     * @return array|null
-     * @throws LocalizedException
-     */
-    private function buildCategoriesTree(int $storeId, array $shownCategoriesIds): ?array
-    {
-        $collection = $this->getCategoryCollection($storeId, $shownCategoriesIds);
-        $categoryById = $this->initCategoryTree();
-
-        foreach ($collection as $category) {
-            $this->processCategoryForTree($category, $categoryById);
-        }
-
-        return $categoryById[CategoryModel::TREE_ROOT_ID]['optgroup'] ?? null;
-    }
-
-    /**
-     * Get category collection
-     *
-     * @param int $storeId
-     * @param array $shownCategoriesIds
-     * @return Collection
-     */
-    private function getCategoryCollection(int $storeId, array $shownCategoriesIds): Collection
-    {
-        $collection = $this->categoryCollectionFactory->create();
-        $collection->addAttributeToFilter('entity_id', ['in' => array_keys($shownCategoriesIds)])
-            ->addAttributeToSelect(['name', 'is_active', 'parent_id'])
-            ->setStoreId($storeId);
-
-        return $collection;
-    }
-
-    /**
-     * Initialize category tree array
-     *
-     * @return array
-     */
-    private function initCategoryTree(): array
-    {
-        return [
-            CategoryModel::TREE_ROOT_ID => [
-                'value' => CategoryModel::TREE_ROOT_ID,
-                'optgroup' => null,
-            ],
-        ];
-    }
-
-    /**
-     * Process category for tree building
-     *
-     * @param CategoryModel $category
-     * @param array $categoryById
-     * @return void
-     */
-    private function processCategoryForTree(CategoryModel $category, array &$categoryById): void
-    {
-        // Initialize category and parent nodes if needed
-        foreach ([$category->getId(), $category->getParentId()] as $categoryId) {
-            if (!isset($categoryById[$categoryId])) {
-                $categoryById[$categoryId] = ['value' => $categoryId];
-            }
-        }
-
-        // Add category data
-        $categoryById[$category->getId()]['is_active'] = $category->getIsActive();
-        $categoryById[$category->getId()]['label'] = (string)$category->getName();
-        $categoryById[$category->getId()]['__disableTmpl'] = true;
-        $categoryById[$category->getParentId()]['optgroup'][] = &$categoryById[$category->getId()];
-    }
-
-    /**
-     * Retrieve filtered list of categories IDs
-     *
-     * @param int $storeId
-     * @param string $filter
-     * @return array
-     * @throws LocalizedException
-     */
-    private function retrieveShownCategoriesIds(int $storeId, string $filter = ''): array
-    {
-        $collection = $this->categoryCollectionFactory->create();
-
-        // Apply name filter if provided
-        if (!empty($filter)) {
-            $collection->addAttributeToFilter(
-                'name',
-                ['like' => $this->dbHelper->addLikeEscape($filter, ['position' => 'any'])]
-            );
-        }
-
-        $collection->addAttributeToSelect('path')
-            ->addAttributeToFilter('entity_id', ['neq' => CategoryModel::TREE_ROOT_ID])
-            ->setStoreId($storeId);
-
-        return $this->extractPathIds($collection);
-    }
-
-    /**
-     * Extract all parent IDs from category paths
-     *
-     * @param Collection $collection
-     * @return array
-     */
-    private function extractPathIds(Collection $collection): array
-    {
-        $shownCategoriesIds = [];
-
-        /** @var CategoryModel $category */
-        foreach ($collection as $category) {
-            $path = $category->getPath();
-            if ($path) {
-                foreach (explode('/', $path) as $parentId) {
-                    $shownCategoriesIds[$parentId] = 1;
-                }
-            }
-        }
-
-        return $shownCategoriesIds;
-    }
-}
-

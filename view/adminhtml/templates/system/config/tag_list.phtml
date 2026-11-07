@@ -1,87 +1,77 @@
 <?php
 /**
- * Copyright (c) 2025. Volodymyr Hryvinskyi. All rights reserved.
+ * Copyright (c) 2025-2026. Volodymyr Hryvinskyi. All rights reserved.
  * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
  * GitHub: https://github.com/hryvinskyi
  */
 
 declare(strict_types=1);
 
+use Hryvinskyi\ConfigurationFields\ViewModel\TagListField;
+use Magento\Framework\Data\Form\Element\AbstractElement;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
 /**
- * @var $block \Magento\Framework\View\Element\Template
- * @var $element \Magento\Framework\Data\Form\Element\AbstractElement
- * @var $config array
+ * A tag-list field on the admin UI kit: the chips its script renders, the text input that adds one, the search input
+ * shown once the chips outgrow their area, and the hidden input that posts the values joined by the separator
+ *
+ * The root carries the kit's `hui` class, so the kit reaches only this widget, and the root class of earlier versions
+ * for themes and scripts that hook it. The script finds every part by its `data-role`. A stored value the field could
+ * not read as a list is printed unchanged in the hidden input, with a notice saying it is kept until the list is
+ * edited.
+ *
+ * @var Template $block
+ * @var Escaper $escaper
  */
-
 $element = $block->getData('element');
-$config = $block->getData('config');
-$inputId = $element->getHtmlId();
-$inputName = $element->getName();
-$inputValue = $element->getValue();
-$disabled = $element->getCanUseWebsiteValue()
-    || $element->getCanUseDefaultValue()
-    || $element->getCanRestoreToDefault();
-
-// Parse current values based on save type
-$separator = $config['separator'] ?? "\n";
-$saveType = $config['save_type'] ?? 'separator';
-$values = [];
-
-if ($inputValue !== null && $inputValue !== '') {
-    switch ($saveType) {
-        case 'json':
-            $decoded = json_decode((string) $inputValue, true);
-            $values = is_array($decoded) ? array_values(array_filter($decoded)) : [];
-            break;
-
-        case 'serialized':
-            try {
-                // @codingStandardsIgnoreLine
-                $unserialized = @unserialize((string) $inputValue);
-                $values = is_array($unserialized) ? array_values(array_filter($unserialized)) : [];
-            } catch (\Exception $e) {
-                $values = [];
-            }
-            break;
-
-        case 'separator':
-        default:
-            $values = array_values(array_filter(array_map('trim', explode($separator, (string) $inputValue))));
-            break;
-    }
+$viewModel = $block->getData('view_model');
+$tagListConfig = $block->getData('tag_list_config');
+if (!$element instanceof AbstractElement || !$viewModel instanceof TagListField || !is_array($tagListConfig)) {
+    return;
 }
-
-
-$valuesJson = json_encode($values, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+$config = $viewModel->config($element, $tagListConfig);
+$rootId = $config['mount']['rootId'];
+$disabled = $config['disabled'];
 ?>
-
-<div class="tag-list-root" id="tag-list-<?= $block->escapeHtmlAttr($inputId) ?>">
-    <div class="tag-list-container<?= $disabled ? ' tag-list-disabled' : '' ?>"
-         id="tag-list-container-<?= $block->escapeHtmlAttr($inputId) ?>">
+<div class="hui hcf-tag-list tag-list-root"
+     id="<?= $escaper->escapeHtmlAttr($rootId) ?>"
+     data-role="hcf-tag-list"<?= $disabled ? ' data-disabled="true"' : '' ?>>
+    <input type="text"
+           class="hui-input hcf-tag-list__search"
+           id="<?= $escaper->escapeHtmlAttr($rootId . '-search') ?>"
+           data-role="hcf-tag-list-search"
+           placeholder="<?= $escaper->escapeHtmlAttr($config['searchPlaceholder']) ?>"
+           aria-label="<?= $escaper->escapeHtmlAttr($config['searchLabel']) ?>"
+           autocomplete="off"
+           hidden>
+    <div class="hcf-tag-list__box">
+        <div class="hcf-tag-list__chips" data-role="hcf-tag-list-chips"></div>
         <input type="text"
-               class="tag-list-input"
-               id="tag-list-input-<?= $block->escapeHtmlAttr($inputId) ?>"
-               placeholder="<?= $block->escapeHtmlAttr($config['placeholder']) ?>"
-               <?= $disabled ? 'disabled' : '' ?>>
+               class="hui-input hcf-tag-list__input"
+               id="<?= $escaper->escapeHtmlAttr($rootId . '-input') ?>"
+               data-role="hcf-tag-list-input"
+               placeholder="<?= $escaper->escapeHtmlAttr($config['placeholder']) ?>"
+               aria-label="<?= $escaper->escapeHtmlAttr($config['inputLabel']) ?>"
+               autocomplete="off"<?= $disabled ? ' disabled' : '' ?>>
     </div>
-
+    <div class="hui-field__error hcf-tag-list__error" data-role="hcf-tag-list-error" role="alert" hidden></div>
+    <?php if ($config['unread']): ?>
+        <div class="hui-notice hcf-tag-list__unread" data-tone="warning" data-role="hcf-tag-list-unread" role="status">
+            <div class="hui-notice__text"><?= $escaper->escapeHtml($config['unreadNotice']) ?></div>
+        </div>
+    <?php endif; ?>
+    <template data-role="hcf-tag-list-chip-template">
+        <span class="hcf-tag-list__chip" data-role="hcf-tag-list-chip" data-value=""><span
+                class="hcf-tag-list__text"></span><button type="button"
+                class="hcf-tag-list__remove"
+                data-role="hcf-tag-list-remove"
+                aria-label="">×</button></span>
+    </template>
     <input type="hidden"
-           id="<?= $block->escapeHtmlAttr($inputId) ?>"
-           name="<?= $block->escapeHtmlAttr($inputName) ?>"
-           value="<?= $block->escapeHtmlAttr($inputValue) ?>">
+           id="<?= $escaper->escapeHtmlAttr($config['inputId']) ?>"
+           name="<?= $escaper->escapeHtmlAttr($config['inputName']) ?>"
+           value="<?= $escaper->escapeHtmlAttr($config['value']) ?>"
+           data-role="hcf-tag-list-value"<?= $disabled ? ' disabled' : '' ?>>
 </div>
-
-<script type="text/x-magento-init">
-    {
-        "#tag-list-<?= $block->escapeJs($inputId) ?>": {
-            "Hryvinskyi_ConfigurationFields/js/tag-list": {
-                "inputId": "<?= $block->escapeJs($inputId) ?>",
-                "values": <?= /* @noEscape */ $valuesJson ?>,
-                "validation": "<?= $block->escapeJs($config['validation']) ?>",
-                "validationMessage": "<?= $block->escapeJs($config['validation_message'] ?? '') ?>",
-                "uppercase": <?= $config['uppercase'] ? 'true' : 'false' ?>,
-                "separator": <?= json_encode($config['separator']) ?>
-            }
-        }
-    }
-</script>
+<script type="text/x-magento-init"><?= /* @noEscape */ $config['mount']['initJson'] ?></script>

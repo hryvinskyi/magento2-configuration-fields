@@ -1,13 +1,19 @@
 {
   "name": "hryvinskyi/magento2-configuration-fields",
-  "version": "1.0.11",
-  "description": "N/A",
+  "version": "1.1.0",
+  "description": "Configuration field types for the Magento 2 admin: a tag list with JSON, serialized or separated storage, a cron expression editor and CodeMirror code editors, drawn with the shared admin UI kit",
   "type": "magento2-module",
   "require": {
+    "php": "^8.1",
+    "ext-mbstring": "*",
+    "hryvinskyi/magento2-admin-ui": "^1.0",
     "magento/framework": "*",
-    "magento/module-store": "*",
+    "magento/module-backend": "*",
+    "magento/module-catalog": "*",
     "magento/module-config": "*",
-    "magento/module-backend": "*"
+    "magento/module-store": "*",
+    "magento/module-ui": "*",
+    "psr/log": "*"
   },
   "suggest": {
     "hryvinskyi/magento2-configuration-hints": "*"

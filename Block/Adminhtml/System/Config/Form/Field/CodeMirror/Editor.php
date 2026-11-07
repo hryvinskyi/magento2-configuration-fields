@@ -9,23 +9,30 @@ declare(strict_types=1);
 
 namespace Hryvinskyi\ConfigurationFields\Block\Adminhtml\System\Config\Form\Field\CodeMirror;
 
+use Hryvinskyi\ConfigurationFields\Block\Adminhtml\System\Config\Form\Field\AbstractWidgetField;
+use Hryvinskyi\ConfigurationFields\ViewModel\CodeMirrorField;
 use Magento\Backend\Block\Template\Context;
-use Magento\Config\Block\System\Config\Form\Field as MagentoField;
 use Magento\Framework\Data\Form\Element\AbstractElement;
-use Magento\Framework\View\Element\Template;
+use Magento\Framework\Exception\LocalizedException;
 
 /**
  * Base CodeMirror editor field for system configuration.
  *
  * Provides a syntax-highlighted code editor using CodeMirror library.
  * Extend this class or use pre-built language-specific editors.
+ *
+ * The view model and the label wrapper arrive as items of the block's `data` argument, declared for this type in the
+ * module's adminhtml `di.xml`; Magento merges a type's arguments into its subclasses and virtual types, so a subclass
+ * that declares its own constructor must forward `$data` to this one.
  */
-class Editor extends MagentoField
+class Editor extends AbstractWidgetField
 {
+    public const VIEW_MODEL = 'code_mirror_view_model';
+
     /**
      * @param Context $context
-     * @param array<string, mixed> $editorConfig Configuration for CodeMirror editor
-     * @param array<string, mixed> $data
+     * @param array<string,mixed> $editorConfig Configuration for CodeMirror editor
+     * @param array<string,mixed> $data
      */
     public function __construct(
         Context $context,
@@ -36,41 +43,26 @@ class Editor extends MagentoField
     }
 
     /**
-     * {@inheritDoc}
+     * The code-editor widget
+     *
+     * @param AbstractElement $element
+     * @return string
+     * @throws LocalizedException When the block has no layout
+     * @throws \LogicException When the view model is not configured
      */
-    protected function _getElementHtml(AbstractElement $element): string
+    protected function widgetHtml(AbstractElement $element): string
     {
-        $html = '';
-        $htmlId = $element->getHtmlId();
-
-        $beforeElementHtml = $element->getBeforeElementHtml();
-        if ($beforeElementHtml) {
-            $html .= '<label class="addbefore" for="' . $htmlId . '">' . $beforeElementHtml . '</label>';
-        }
-
-        $html .= $this->getLayout()->createBlock(Template::class)
-            ->setTemplate('Hryvinskyi_ConfigurationFields::system/config/codemirror.phtml')
-            ->setData('element', $element)
-            ->setData('editor_config', $this->getEditorConfig())
-            ->toHtml();
-
-        $afterElementJs = $element->getAfterElementJs();
-        if ($afterElementJs) {
-            $html .= $afterElementJs;
-        }
-
-        $afterElementHtml = $element->getAfterElementHtml();
-        if ($afterElementHtml) {
-            $html .= '<label class="addafter" for="' . $htmlId . '">' . $afterElementHtml . '</label>';
-        }
-
-        return $html;
+        return $this->renderWidget('Hryvinskyi_ConfigurationFields::system/config/codemirror.phtml', [
+            'element' => $element,
+            'view_model' => $this->requiredData(self::VIEW_MODEL, CodeMirrorField::class),
+            'editor_config' => $this->getEditorConfig(),
+        ]);
     }
 
     /**
      * Get editor configuration with defaults.
      *
-     * @return array<string, mixed>
+     * @return array<string,mixed>
      */
     protected function getEditorConfig(): array
     {

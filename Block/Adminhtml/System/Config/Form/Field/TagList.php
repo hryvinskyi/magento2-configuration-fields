@@ -9,10 +9,10 @@ declare(strict_types=1);
 
 namespace Hryvinskyi\ConfigurationFields\Block\Adminhtml\System\Config\Form\Field;
 
+use Hryvinskyi\ConfigurationFields\ViewModel\TagListField;
 use Magento\Backend\Block\Template\Context;
-use Magento\Config\Block\System\Config\Form\Field as MagentoField;
 use Magento\Framework\Data\Form\Element\AbstractElement;
-use Magento\Framework\View\Element\Template;
+use Magento\Framework\Exception\LocalizedException;
 
 /**
  * Tag List configuration field
@@ -46,17 +46,31 @@ use Magento\Framework\View\Element\Template;
  *
  * Configuration options:
  * - placeholder: Custom placeholder text (default: "Type value and press Enter...")
- * - validation: Regex pattern for validation (default: ^[A-Za-z0-9]+$)
+ * - validation: Regex pattern for validation (default: ^[a-zA-Z0-9.!#$%&'*+\/=?^_`"{|}~-]+$, letters, digits and
+ *   . ! # $ % & ' * + / = ? ^ _ ` " { | } ~ - with no spaces)
+ * - validation_message: Message shown for a value that does not match (default: "Use letters, digits and
+ *   . ! # $ % & ' * + / = ? ^ _ ` " { | } ~ - only, without spaces.")
  * - uppercase: Whether to auto-uppercase values (default: true)
  * - separator: Separator for stored values (default: newline)
  * - save_type: Storage format - 'json', 'serialized', or 'separator' (default: separator)
+ *
+ * The block's declared `tagListConfig` argument owns the field's settings: the browser gets them through the view
+ * model, and the backend model reads the same declared argument from the admin area's container declarations when the
+ * field is saved, so the pattern a value is checked against has one owner. A subclass that changes the argument in
+ * code changes what the browser shows, not what the save checks.
+ *
+ * The view model and the label wrapper arrive as items of the block's `data` argument, declared for this type in the
+ * module's adminhtml `di.xml`; Magento merges a type's arguments into its subclasses and virtual types, so a subclass
+ * that declares its own constructor must forward `$data` to this one.
  */
-class TagList extends MagentoField
+class TagList extends AbstractWidgetField
 {
+    public const VIEW_MODEL = 'tag_list_view_model';
+
     /**
      * @param Context $context
-     * @param array<string, mixed> $tagListConfig Configuration for tag list behavior
-     * @param array<string, mixed> $data
+     * @param array<mixed> $tagListConfig Configuration for tag list behavior
+     * @param array<string,mixed> $data
      */
     public function __construct(
         Context $context,
@@ -65,75 +79,21 @@ class TagList extends MagentoField
     ) {
         parent::__construct($context, $data);
     }
+
     /**
-     * Render element HTML
+     * The tag-list widget
      *
      * @param AbstractElement $element
      * @return string
+     * @throws LocalizedException When the block has no layout
+     * @throws \LogicException When the view model is not configured
      */
-    protected function _getElementHtml(AbstractElement $element): string
+    protected function widgetHtml(AbstractElement $element): string
     {
-        $html = '';
-        $htmlId = $element->getHtmlId();
-
-        $beforeElementHtml = $element->getBeforeElementHtml();
-        if ($beforeElementHtml) {
-            $html .= '<label class="addbefore" for="' . $htmlId . '">' . $beforeElementHtml . '</label>';
-        }
-
-        $html .= $this->getLayout()->createBlock(Template::class)
-            ->setTemplate('Hryvinskyi_ConfigurationFields::system/config/tag_list.phtml')
-            ->setData('element', $element)
-            ->setData('config', $this->getTagListConfig($element))
-            ->toHtml();
-
-        $afterElementJs = $element->getAfterElementJs();
-        if ($afterElementJs) {
-            $html .= $afterElementJs;
-        }
-
-        $afterElementHtml = $element->getAfterElementHtml();
-        if ($afterElementHtml) {
-            $html .= '<label class="addafter" for="' . $htmlId . '">' . $afterElementHtml . '</label>';
-        }
-
-        return $html;
-    }
-
-    /**
-     * Get tag list configuration from DI config with defaults
-     *
-     * @param AbstractElement $element
-     * @return array<string, mixed>
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    private function getTagListConfig(AbstractElement $element): array
-    {
-        $separator = $this->tagListConfig['separator'] ?? "\n";
-        $separator = $this->unescapeSeparator($separator);
-
-        return [
-            'placeholder' => $this->tagListConfig['placeholder'] ?? __('Type value and press Enter...'),
-            'validation' => $this->tagListConfig['validation'] ?? '^[a-zA-Z0-9.!#$%&\'*+\/=?^_`"{|}~-]+$',
-            'validation_message' => $this->tagListConfig['validation_message'] ?? '',
-            'uppercase' => (bool) ($this->tagListConfig['uppercase'] ?? true),
-            'separator' => $separator,
-            'save_type' => $this->tagListConfig['save_type'] ?? 'separator',
-        ];
-    }
-
-    /**
-     * Convert escaped string sequences to actual characters
-     *
-     * @param string $separator
-     * @return string
-     */
-    private function unescapeSeparator(string $separator): string
-    {
-        return str_replace(
-            ['\\n', '\\t', '\\r'],
-            ["\n", "\t", "\r"],
-            $separator
-        );
+        return $this->renderWidget('Hryvinskyi_ConfigurationFields::system/config/tag_list.phtml', [
+            'element' => $element,
+            'view_model' => $this->requiredData(self::VIEW_MODEL, TagListField::class),
+            'tag_list_config' => $this->tagListConfig,
+        ]);
     }
 }
